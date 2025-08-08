@@ -1,0 +1,12 @@
+{% extends 'layout/base.html' %}
+{% block content %}
+<div>Đặt vé</div>
+
+<ul>
+{% for event in events %}
+    <li>{{ event.name }} - {{ event.address }}</li>
+{% else %}
+    <li>Không có sự kiện nào.</li>
+{% endfor %}
+</ul>
+{% endblock %}
