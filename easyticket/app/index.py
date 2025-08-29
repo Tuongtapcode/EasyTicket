@@ -3,8 +3,7 @@ from app import app
 from flask import render_template
 @app.route('/')
 def index():
-    events = dao.load_event()
-    return render_template("index.html", events=events)
+    return render_template("index.html")
 
 
 if __name__ == '__main__':

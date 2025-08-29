@@ -1,12 +1,405 @@
 {% extends 'layout/base.html' %}
 {% block content %}
-<div>Đặt vé</div>
+  <!-- Header -->
 
-<ul>
-{% for event in events %}
-    <li>{{ event.name }} - {{ event.address }}</li>
-{% else %}
-    <li>Không có sự kiện nào.</li>
-{% endfor %}
-</ul>
+
+    <!-- Search Section -->
+    <section class="bg-white shadow-sm py-8">
+        <div class="container mx-auto px-4">
+            <div class="max-w-4xl mx-auto">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Tìm kiếm sự kiện yêu thích</h2>
+                <div class="flex flex-col md:flex-row gap-4">
+                    <input
+                        type="text"
+                        id="searchInput"
+                        placeholder="Tìm kiếm theo tên sự kiện..."
+                        class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    >
+                    <select id="statusFilter" class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                        <option value="">Tất cả trạng thái</option>
+                        <option value="PUBLISHED">Đã xuất bản</option>
+                        <option value="DRAFT">Bản nháp</option>
+                        <option value="CANCELLED">Đã hủy</option>
+                    </select>
+                    <button
+                        onclick="searchEvents()"
+                        class="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
+                    >
+                        🔍 Tìm kiếm
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Events Grid -->
+    <section class="py-12">
+        <div class="container mx-auto px-4">
+            <div id="eventsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Events will be populated here -->
+            </div>
+
+            <div id="noResults" class="text-center py-12 hidden">
+                <div class="text-gray-500 text-lg">
+                    <p>😔 Không tìm thấy sự kiện nào phù hợp</p>
+                    <p class="text-sm mt-2">Hãy thử tìm kiếm với từ khóa khác</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Event Detail Modal -->
+    <div id="eventModal" class="modal fixed inset-0 bg-black bg-opacity-50 z-50 items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <h3 id="modalTitle" class="text-2xl font-bold text-gray-800"></h3>
+                    <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+                </div>
+
+                <div id="modalBanner" class="w-full h-48 bg-gradient-to-r from-purple-400 to-pink-400 rounded-lg mb-4 flex items-center justify-center text-white text-6xl">
+                    🎪
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <h4 class="font-semibold text-gray-700 mb-2">📝 Mô tả</h4>
+                        <p id="modalDescription" class="text-gray-600"></p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <h4 class="font-semibold text-gray-700 mb-2">📅 Thời gian bắt đầu</h4>
+                            <p id="modalStartTime" class="text-gray-600"></p>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-gray-700 mb-2">⏰ Thời gian kết thúc</h4>
+                            <p id="modalEndTime" class="text-gray-600"></p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="font-semibold text-gray-700 mb-2">📍 Địa điểm</h4>
+                        <p id="modalAddress" class="text-gray-600"></p>
+                    </div>
+
+                    <div>
+                        <h4 class="font-semibold text-gray-700 mb-2">🎫 Loại vé có sẵn</h4>
+                        <div id="ticketTypes" class="space-y-2">
+                            <!-- Ticket types will be populated here -->
+                        </div>
+                    </div>
+
+                    <div class="flex gap-4 pt-4">
+                        <button
+                            onclick="buyTicket()"
+                            class="flex-1 bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 transition-colors font-medium"
+                        >
+                            🎟️ Mua vé ngay
+                        </button>
+                        <button
+                            onclick="shareEvent()"
+                            class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                        >
+                            📤 Chia sẻ
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Purchase Success Modal -->
+    <div id="purchaseModal" class="modal fixed inset-0 bg-black bg-opacity-50 z-50 items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-md w-full p-6 text-center">
+            <div class="text-6xl mb-4">🎉</div>
+            <h3 class="text-2xl font-bold text-gray-800 mb-2">Mua vé thành công!</h3>
+            <p class="text-gray-600 mb-6">Cảm ơn bạn đã mua vé. Thông tin vé đã được gửi về email của bạn.</p>
+            <button
+                onclick="closePurchaseModal()"
+                class="w-full bg-purple-600 text-white py-3 px-6 rounded-lg hover:bg-purple-700 transition-colors font-medium"
+            >
+                Đóng
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Sample data - Dữ liệu giả
+        const events = [
+            {
+                id: 1,
+                name: "Lễ hội âm nhạc mùa hè 2024",
+                description: "Một đêm nhạc tuyệt vời với những nghệ sĩ hàng đầu Việt Nam. Cùng nhau tận hưởng những giai điệu sôi động và không khí lễ hội sôi nổi.",
+                status: "PUBLISHED",
+                start_datetime: "2024-07-15T19:00:00",
+                end_datetime: "2024-07-15T23:00:00",
+                address: "Công viên Thống Nhất, Hà Nội",
+                banner_image: null,
+                created_at: "2024-01-15T10:00:00",
+                updated_at: "2024-01-20T14:30:00",
+                published_at: "2024-01-20T14:30:00",
+                ticketTypes: [
+                    { name: "Vé thường", price: "500,000 VNĐ", description: "Khu vực đứng" },
+                    { name: "Vé VIP", price: "1,200,000 VNĐ", description: "Khu vực ngồi gần sân khấu" }
+                ]
+            },
+            {
+                id: 2,
+                name: "Hội thảo Công nghệ AI 2024",
+                description: "Khám phá những xu hướng mới nhất trong lĩnh vực trí tuệ nhân tạo cùng các chuyên gia hàng đầu trong ngành.",
+                status: "PUBLISHED",
+                start_datetime: "2024-06-20T09:00:00",
+                end_datetime: "2024-06-20T17:00:00",
+                address: "Trung tâm Hội nghị Quốc gia, TP.HCM",
+                banner_image: null,
+                created_at: "2024-01-10T08:00:00",
+                updated_at: "2024-01-25T16:45:00",
+                published_at: "2024-01-25T16:45:00",
+                ticketTypes: [
+                    { name: "Vé sinh viên", price: "200,000 VNĐ", description: "Dành cho sinh viên có thẻ" },
+                    { name: "Vé thường", price: "800,000 VNĐ", description: "Bao gồm tài liệu và coffee break" }
+                ]
+            },
+            {
+                id: 3,
+                name: "Triển lãm Nghệ thuật Đương đại",
+                description: "Trưng bày những tác phẩm nghệ thuật đương đại độc đáo từ các nghệ sĩ trẻ tài năng trong và ngoài nước.",
+                status: "PUBLISHED",
+                start_datetime: "2024-08-01T10:00:00",
+                end_datetime: "2024-08-31T18:00:00",
+                address: "Bảo tàng Mỹ thuật, Hà Nội",
+                banner_image: null,
+                created_at: "2024-02-01T12:00:00",
+                updated_at: "2024-02-05T09:15:00",
+                published_at: "2024-02-05T09:15:00",
+                ticketTypes: [
+                    { name: "Vé người lớn", price: "150,000 VNĐ", description: "Vé tham quan cả tháng" },
+                    { name: "Vé trẻ em", price: "75,000 VNĐ", description: "Dành cho trẻ em dưới 12 tuổi" }
+                ]
+            },
+            {
+                id: 4,
+                name: "Workshop Nấu ăn Ý",
+                description: "Học cách làm pasta và pizza authentic từ đầu bếp người Ý chính hiệu. Một trải nghiệm ẩm thực không thể bỏ lỡ.",
+                status: "DRAFT",
+                start_datetime: "2024-09-10T14:00:00",
+                end_datetime: "2024-09-10T17:00:00",
+                address: "Nhà hàng Bella Italia, Quận 1, TP.HCM",
+                banner_image: null,
+                created_at: "2024-02-10T11:30:00",
+                updated_at: "2024-02-10T11:30:00",
+                published_at: "2024-09-01T00:00:00",
+                ticketTypes: [
+                    { name: "Vé tham gia", price: "1,500,000 VNĐ", description: "Bao gồm nguyên liệu và bữa ăn" }
+                ]
+            },
+            {
+                id: 5,
+                name: "Chạy bộ Marathon Hà Nội",
+                description: "Sự kiện chạy bộ lớn nhất năm với các cự ly 5km, 10km, 21km và 42km. Cùng nhau vì sức khỏe và môi trường xanh.",
+                status: "PUBLISHED",
+                start_datetime: "2024-10-15T06:00:00",
+                end_datetime: "2024-10-15T12:00:00",
+                address: "Hồ Gươm, Hà Nội",
+                banner_image: null,
+                created_at: "2024-01-05T07:00:00",
+                updated_at: "2024-02-15T10:20:00",
+                published_at: "2024-02-15T10:20:00",
+                ticketTypes: [
+                    { name: "5km", price: "300,000 VNĐ", description: "Bao gồm áo, số bib và huy chương" },
+                    { name: "21km", price: "500,000 VNĐ", description: "Bao gồm áo, số bib và huy chương" },
+                    { name: "42km", price: "800,000 VNĐ", description: "Bao gồm áo, số bib và huy chương" }
+                ]
+            },
+            {
+                id: 6,
+                name: "Lễ hội Bia Craft Việt Nam",
+                description: "Thưởng thức những loại bia thủ công tuyệt hảo từ các nhà sản xuất địa phương cùng âm nhạc và ẩm thực đặc sắc.",
+                status: "CANCELLED",
+                start_datetime: "2024-05-25T17:00:00",
+                end_datetime: "2024-05-26T22:00:00",
+                address: "Công viên Tao Đàn, TP.HCM",
+                banner_image: null,
+                created_at: "2024-01-20T15:00:00",
+                updated_at: "2024-03-01T12:00:00",
+                published_at: "2024-01-25T15:00:00",
+                ticketTypes: [
+                    { name: "Vé 1 ngày", price: "400,000 VNĐ", description: "Bao gồm 3 ly bia và đồ ăn nhẹ" },
+                    { name: "Vé 2 ngày", price: "700,000 VNĐ", description: "Bao gồm 6 ly bia và đồ ăn" }
+                ]
+            }
+        ];
+
+        let filteredEvents = [...events];
+        let currentEvent = null;
+
+        // Format date function
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('vi-VN', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // Get status badge
+        function getStatusBadge(status) {
+            const badges = {
+                'PUBLISHED': '<span class="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">✅ Đã xuất bản</span>',
+                'DRAFT': '<span class="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full">📝 Bản nháp</span>',
+                'CANCELLED': '<span class="px-2 py-1 bg-red-100 text-red-800 text-xs font-medium rounded-full">❌ Đã hủy</span>'
+            };
+            return badges[status] || '';
+        }
+
+        // Render events
+        function renderEvents(eventsToRender = filteredEvents) {
+            const grid = document.getElementById('eventsGrid');
+            const noResults = document.getElementById('noResults');
+
+            if (eventsToRender.length === 0) {
+                grid.innerHTML = '';
+                noResults.classList.remove('hidden');
+                return;
+            }
+
+            noResults.classList.add('hidden');
+
+            grid.innerHTML = eventsToRender.map(event => `
+                <div class="bg-white rounded-xl shadow-md card-hover cursor-pointer" onclick="openEventDetail(${event.id})">
+                    <div class="h-48 bg-gradient-to-r from-purple-400 to-pink-400 rounded-t-xl flex items-center justify-center text-white text-6xl">
+                        🎪
+                    </div>
+                    <div class="p-6">
+                        <div class="flex justify-between items-start mb-3">
+                            <h3 class="text-xl font-bold text-gray-800 line-clamp-2">${event.name}</h3>
+                            ${getStatusBadge(event.status)}
+                        </div>
+                        <p class="text-gray-600 mb-4 line-clamp-3">${event.description}</p>
+                        <div class="space-y-2 text-sm text-gray-500">
+                            <div class="flex items-center">
+                                <span class="mr-2">📅</span>
+                                <span>${formatDate(event.start_datetime)}</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="mr-2">📍</span>
+                                <span class="line-clamp-1">${event.address}</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="mr-2">🎫</span>
+                                <span>${event.ticketTypes.length} loại vé</span>
+                            </div>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-gray-100">
+                            <button class="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 transition-colors font-medium">
+                                Xem chi tiết
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Search events
+        function searchEvents() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+
+            filteredEvents = events.filter(event => {
+                const matchesSearch = event.name.toLowerCase().includes(searchTerm) ||
+                                    event.description.toLowerCase().includes(searchTerm);
+                const matchesStatus = !statusFilter || event.status === statusFilter;
+
+                return matchesSearch && matchesStatus;
+            });
+
+            renderEvents(filteredEvents);
+        }
+
+        // Open event detail modal
+        function openEventDetail(eventId) {
+            currentEvent = events.find(event => event.id === eventId);
+            if (!currentEvent) return;
+
+            document.getElementById('modalTitle').textContent = currentEvent.name;
+            document.getElementById('modalDescription').textContent = currentEvent.description;
+            document.getElementById('modalStartTime').textContent = formatDate(currentEvent.start_datetime);
+            document.getElementById('modalEndTime').textContent = formatDate(currentEvent.end_datetime);
+            document.getElementById('modalAddress').textContent = currentEvent.address;
+
+            // Render ticket types
+            const ticketTypesContainer = document.getElementById('ticketTypes');
+            ticketTypesContainer.innerHTML = currentEvent.ticketTypes.map(ticket => `
+                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <div>
+                        <div class="font-medium text-gray-800">${ticket.name}</div>
+                        <div class="text-sm text-gray-600">${ticket.description}</div>
+                    </div>
+                    <div class="text-lg font-bold text-purple-600">${ticket.price}</div>
+                </div>
+            `).join('');
+
+            document.getElementById('eventModal').classList.add('active');
+        }
+
+        // Close modal
+        function closeModal() {
+            document.getElementById('eventModal').classList.remove('active');
+        }
+
+        // Buy ticket
+        function buyTicket() {
+            if (currentEvent.status !== 'PUBLISHED') {
+                alert('Sự kiện này chưa được xuất bản hoặc đã bị hủy!');
+                return;
+            }
+
+            closeModal();
+            document.getElementById('purchaseModal').classList.add('active');
+        }
+
+        // Close purchase modal
+        function closePurchaseModal() {
+            document.getElementById('purchaseModal').classList.remove('active');
+        }
+
+        // Share event
+        function shareEvent() {
+            if (navigator.share) {
+                navigator.share({
+                    title: currentEvent.name,
+                    text: currentEvent.description,
+                    url: window.location.href
+                });
+            } else {
+                // Fallback for browsers that don't support Web Share API
+                const url = window.location.href;
+                navigator.clipboard.writeText(url).then(() => {
+                    alert('Đã sao chép link sự kiện vào clipboard!');
+                });
+            }
+        }
+
+        // Add event listeners
+        document.getElementById('searchInput').addEventListener('input', searchEvents);
+        document.getElementById('statusFilter').addEventListener('change', searchEvents);
+
+        // Close modals when clicking outside
+        document.getElementById('eventModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+
+        document.getElementById('purchaseModal').addEventListener('click', function(e) {
+            if (e.target === this) closePurchaseModal();
+        });
+
+        // Initialize
+        renderEvents();
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'976ce3cf67d3ef6e',t:'MTc1NjQ3OTMzMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+
 {% endblock %}
