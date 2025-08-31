@@ -26,3 +26,6 @@ def register():
             flash(f'An error occurred: {str(e)}', 'danger')
 
     return render_template('register.html', title='Register', form=form)
+
+
+
