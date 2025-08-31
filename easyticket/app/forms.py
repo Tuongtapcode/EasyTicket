@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField
+from wtforms import StringField, PasswordField, SubmitField, BooleanField, TextAreaField
 from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError
 from app.models import User
 
@@ -33,3 +33,14 @@ class RegistrationForm(FlaskForm):
         user = User.query.filter_by(phone=phone.data).first()
         if user:
             raise ValidationError('That phone number is taken. Please choose a different one.')
+
+
+
+
+#Username, Password là các label trong html cho gọn, có thể dùng form.username.label để lấy giá trị này
+#Nói chung là để sẵn tên field chứ kh có gì
+class LoginForm(FlaskForm):
+    username = StringField('Username', validators=[DataRequired()])
+    password = PasswordField('Password', validators=[DataRequired()])
+    remember = BooleanField('Remember Me')
+    submit = SubmitField('Log In')
