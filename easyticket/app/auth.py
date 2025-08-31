@@ -52,5 +52,5 @@ def login():
 
 @auth.route("/logout")
 def logout():
-    logout_user()
+    logout_user()#xoa user khoi flask login
     return redirect(url_for('index'))

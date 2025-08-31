@@ -7,7 +7,13 @@
                     <a href="{{url_for('index')}}" class="hover:text-yellow-300 transition-colors">Trang chủ</a>
                     <a href="#" class="hover:text-yellow-300 transition-colors">Sự kiện</a>
                     <a href="#" class="hover:text-yellow-300 transition-colors">Liên hệ</a>
+                     {% if current_user.is_authenticated %}
+                    <a href="#" class="hover:text-yellow-300 transition-colors">Xin chào, {{ current_user.username }}</a>
+                    <a href="{{ url_for('auth.logout') }}" class="hover:text-yellow-300 transition-colors">Đăng xuất</a>
+                {% else %}
+                    <a href="{{ url_for('auth.login') }}" class="hover:text-yellow-300 transition-colors">Đăng nhập</a>
                     <a href="{{ url_for('auth.register') }}" class="hover:text-yellow-300 transition-colors">Đăng ký</a>
+                {% endif %}
                 </nav>
             </div>
         </div>
