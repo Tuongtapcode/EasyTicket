@@ -4,9 +4,10 @@
             <div class="flex items-center justify-between">
                 <h1 class="text-3xl font-bold">🎉 EasyTicket</h1>
                 <nav class="hidden md:flex space-x-6">
-                    <a href="#" class="hover:text-yellow-300 transition-colors">Trang chủ</a>
+                    <a href="{{url_for('index')}}" class="hover:text-yellow-300 transition-colors">Trang chủ</a>
                     <a href="#" class="hover:text-yellow-300 transition-colors">Sự kiện</a>
                     <a href="#" class="hover:text-yellow-300 transition-colors">Liên hệ</a>
+                    <a href="{{ url_for('auth.register') }}" class="hover:text-yellow-300 transition-colors">Đăng ký</a>
                 </nav>
             </div>
         </div>
