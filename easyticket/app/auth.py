@@ -1,7 +1,9 @@
 
-from flask import Blueprint, render_template, url_for, flash, redirect
+from flask import Blueprint, render_template, url_for, flash, redirect, request
+from flask_login import logout_user,current_user, login_user,login_required
 from app import dao
-from app.forms import RegistrationForm
+from app.forms import RegistrationForm, LoginForm
+from werkzeug.security import generate_password_hash, check_password_hash
 
 #Blue print dùng để nhóm các routes lại cho gọn hơn
 auth = Blueprint('auth', __name__, template_folder='templates')
@@ -28,4 +30,27 @@ def register():
     return render_template('register.html', title='Register', form=form)
 
 
+@auth.route("/login", methods=['GET', 'POST'])
+def login():
+    #Nếu đã đăng nhập, chuyển hướng về trang chủ
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
 
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = dao.get_user_by_username(form.username.data) #Trong dao có hàm này để check user
+        if user and check_password_hash(user.password, form.password.data):
+            # Mật khẩu đúng, đăng nhập người dùng
+            login_user(user, remember=form.remember.data) #remeber để lưu lại người dùng khi bấm nhớ
+            next_page = request.args.get('next')
+            flash('Login successful!', 'success')
+            return redirect(next_page or url_for('index'))
+        else:
+            flash('Login Unsuccessful. Please check username and password', 'danger')
+    return render_template('login.html', title='Log In', form=form)
+
+
+@auth.route("/logout")
+def logout():
+    logout_user()
+    return redirect(url_for('index'))
