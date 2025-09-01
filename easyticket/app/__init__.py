@@ -18,6 +18,8 @@ RAILWAY_DB   = os.getenv("DB_NAME", "railway")
 app.config["SQLALCHEMY_DATABASE_URI"] = (
     f"mysql+pymysql://{RAILWAY_USER}:{quote(RAILWAY_PASSWORD)}@{RAILWAY_HOST}:{RAILWAY_PORT}/{RAILWAY_DB}?charset=utf8mb4"
 )
+
+
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
@@ -33,7 +35,7 @@ from app.models import (
     Payment
 )
 
-from app.auth import auth
+from app.templates.blueprints.auth import auth
 app.register_blueprint(auth)
 
 @login_manager.user_loader
