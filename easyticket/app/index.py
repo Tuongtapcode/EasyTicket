@@ -1,15 +1,8 @@
 from flask_login import current_user, login_required
-
-from app import dao
 from app import app
 from flask import render_template, abort
 
 from app.models import UserRole
-
-
-@app.route('/')
-def index():
-    return render_template("user/index.html")
 
 @app.route('/dashboard')
 @login_required

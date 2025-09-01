@@ -35,8 +35,10 @@ from app.models import (
     Payment
 )
 
-from app.templates.blueprints.auth import auth
+from app.blueprints.auth import auth
+from app.blueprints.main import main
 app.register_blueprint(auth)
+app.register_blueprint(main)
 
 @login_manager.user_loader
 def load_user(user_id):
