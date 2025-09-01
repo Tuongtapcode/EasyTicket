@@ -1,7 +1,7 @@
 
 from flask import Blueprint, render_template, url_for, flash, redirect, request
 from flask_login import logout_user,current_user, login_user
-from ..dao import add_user,get_user_by_username
+from app.dao.user_dao import *
 from app.forms import RegistrationForm, LoginForm
 from werkzeug.security import  check_password_hash
 
@@ -23,7 +23,7 @@ def register():
                 password=form.password.data
             )
             flash('Your account has been created! You are now able to log in', 'success')
-            return redirect(url_for('index'))
+            return redirect(url_for('main.index'))
         except Exception as e:
             flash(f'An error occurred: {str(e)}', 'danger')
 
@@ -44,7 +44,7 @@ def login():
             login_user(user, remember=form.remember.data) #remeber để lưu lại người dùng khi bấm nhớ
             next_page = request.args.get('next')
             flash('Login successful!', 'success')
-            return redirect(next_page or url_for('index'))
+            return redirect(next_page or url_for('main.index'))
         else:
             flash('Login Unsuccessful. Please check username and password', 'danger')
     return render_template('auth/login.html', title='Log In', form=form)
@@ -53,4 +53,4 @@ def login():
 @auth.route("/logout")
 def logout():
     logout_user()#xoa user khoi flask login
-    return redirect(url_for('index'))
+    return redirect(url_for('main.index'))
