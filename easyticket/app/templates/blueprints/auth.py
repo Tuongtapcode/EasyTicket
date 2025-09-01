@@ -27,7 +27,7 @@ def register():
         except Exception as e:
             flash(f'An error occurred: {str(e)}', 'danger')
 
-    return render_template('register.html', title='Register', form=form)
+    return render_template('auth/register.html', title='Register', form=form)
 
 
 @auth.route("/login", methods=['GET', 'POST'])
@@ -47,7 +47,7 @@ def login():
             return redirect(next_page or url_for('index'))
         else:
             flash('Login Unsuccessful. Please check username and password', 'danger')
-    return render_template('login.html', title='Log In', form=form)
+    return render_template('auth/login.html', title='Log In', form=form)
 
 
 @auth.route("/logout")
