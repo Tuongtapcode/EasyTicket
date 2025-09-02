@@ -157,7 +157,7 @@
               <div class="alert alert-light mb-0">Hiện chưa có loại vé.</div>
             {% else %}
               {# NOTE: đổi 'orders.create' thành route tạo Order của bạn #}
-              <form method="post" action="#">
+              <form method="post" action="{{ url_for('order.create') }}">
                 <input type="hidden" name="event_id" value="{{ event.id }}">
                 {# Nếu dùng Flask-WTF: {{ form.csrf_token }} #}
 

@@ -4,7 +4,7 @@ from decimal import Decimal
 from app.dao.event_dao import get_event_by_id
 from app.dao.ticket_dao import get_ticket_type_by_event_id, count_sold_by_ticket_type
 
-events_bp = Blueprint("events", __name__, url_prefix="/events")
+events_bp = Blueprint("event", __name__, url_prefix="/events")
 
 @events_bp.route("/<int:event_id>")
 def event_details(event_id: int):
