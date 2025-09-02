@@ -1,0 +1,62 @@
+name: EasyTicket Feature CICD
+
+# Chỉ chạy khi push vào nhánh feature/cicd
+on:
+  push:
+    branches:
+      - feature/cicd
+
+env:
+  IMAGE_NAME: nguyentuong/easyticket
+
+jobs:
+  build-test-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          ref: feature/cicd
+
+      # 2. Set up Python
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.10
+
+      # 3. Install dependencies
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # 4. Run tests
+      - name: Run Unit Tests
+        run: |
+          python -m unittest discover -s app/tests
+
+      # 5. Build Docker image
+      - name: Build Docker image
+        run: |
+          docker build -t $IMAGE_NAME:${{ github.run_number }} .
+          docker tag $IMAGE_NAME:${{ github.run_number }} $IMAGE_NAME:latest
+
+      # 6. Login & Push Docker Hub
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      - name: Push Docker image
+        run: |
+          docker push $IMAGE_NAME:${{ github.run_number }}
+          docker push $IMAGE_NAME:latest
+
+      # 7. Trigger Render Deploy (placeholder)
+      - name: Trigger Render Deploy
+        run: |
+          echo "Trigger Render deploy here..."
+          # curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
