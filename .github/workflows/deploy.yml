@@ -54,8 +54,7 @@ jobs:
           docker push $IMAGE_NAME:${{ github.run_number }}
           docker push $IMAGE_NAME:latest
 
-      # 7. Trigger Render Deploy (placeholder)
+      # 7. Trigger Render Deploy
       - name: Trigger Render Deploy
         run: |
-          echo "Trigger Render deploy here..."
-          # curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
+          curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
