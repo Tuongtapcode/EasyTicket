@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template
 from app.dao.event_dao import *
+from app.dao.ticket_dao import *
 
 main = Blueprint('main', __name__, template_folder='templates')
 

@@ -37,8 +37,10 @@ from app.models import (
 
 from app.blueprints.auth import auth
 from app.blueprints.main import main
+from app.blueprints.event import events_bp
 app.register_blueprint(auth)
 app.register_blueprint(main)
+app.register_blueprint(events_bp)
 
 @login_manager.user_loader
 def load_user(user_id):

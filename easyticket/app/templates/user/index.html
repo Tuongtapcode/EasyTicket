@@ -423,37 +423,7 @@
 
         // Open event detail modal
         function openEventDetail(eventId) {
-            currentEvent = events.find(event => event.id === eventId);
-            if (!currentEvent) return;
-
-            document.getElementById('modalTitle').textContent = currentEvent.name;
-            document.getElementById('modalDescription').textContent = currentEvent.description;
-            document.getElementById('modalStartTime').textContent = formatDate(currentEvent.start_datetime);
-            document.getElementById('modalEndTime').textContent = formatDate(currentEvent.end_datetime);
-            document.getElementById('modalAddress').textContent = currentEvent.address;
-
-            // Render ticket types
-            const ticketTypesContainer = document.getElementById('ticketTypes');
-            ticketTypesContainer.innerHTML = currentEvent.ticketTypes.map(ticket => `
-                <div class="ticket-type-card">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div class="flex-grow-1">
-                            <h6 class="mb-1">${ticket.name}</h6>
-                            <p class="text-muted small mb-1">${ticket.description}</p>
-                            <small class="text-info">
-                                ${ticket.quantity > 0 ? `Còn ${ticket.quantity} vé` : 'Hết vé'}
-                            </small>
-                        </div>
-                        <div class="text-end">
-                            <div class="h6 text-primary mb-0">${formatPrice(ticket.price)}</div>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-
-            // Show modal
-            const modal = new bootstrap.Modal(document.getElementById('eventModal'));
-            modal.show();
+             window.location.href = `/events/${eventId}`;
         }
 
         // Buy ticket function

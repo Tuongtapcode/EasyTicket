@@ -150,6 +150,7 @@ class TicketType(db.Model):
     description = Column(String(200), nullable=False)
     quantity = Column(Integer, nullable=False)
     active = Column(Boolean, default=True)
+    price = Column(Numeric(10, 2), nullable=False)
 
     created_at = Column(DateTime, default=datetime.now)
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
