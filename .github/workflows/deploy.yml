@@ -31,10 +31,10 @@ jobs:
           pip install --upgrade pip
           pip install -r easyticket/requirements.txt
 
-      # 4. Run tests
+      # 4. Run tests (thêm PYTHONPATH để nhận ra easyticket)
       - name: Run Unit Tests
         run: |
-          python -m unittest discover -s easyticket/app/tests
+          PYTHONPATH=easyticket python -m unittest discover -s easyticket/app/tests
 
       # 5. Build Docker image
       - name: Build Docker image
@@ -42,20 +42,19 @@ jobs:
           docker build -t $IMAGE_NAME:${{ github.run_number }} easyticket
           docker tag $IMAGE_NAME:${{ github.run_number }} $IMAGE_NAME:latest
 
-      # 6. Login to Docker Hub
+      # 6. Login & Push Docker Hub
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
-      # 7. Push Docker image
       - name: Push Docker image
         run: |
           docker push $IMAGE_NAME:${{ github.run_number }}
           docker push $IMAGE_NAME:latest
 
-      # 8. Trigger Render Deploy (placeholder)
+      # 7. Trigger Render Deploy (placeholder)
       - name: Trigger Render Deploy
         run: |
           echo "Trigger Render deploy here..."
