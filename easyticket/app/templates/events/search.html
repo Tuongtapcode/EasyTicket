@@ -1,0 +1,53 @@
+{% extends "layout/base.html" %}
+{% block content %}
+<section class="py-4">
+  <div class="container">
+    <form method="get" class="mb-3 d-flex gap-2">
+      <input class="form-control" name="q" value="{{ q }}" placeholder="Tìm theo tên/mô tả/địa điểm">
+      <button class="btn btn-primary"><i class="fas fa-search me-1"></i>Tìm</button>
+    </form>
+
+    <div class="row g-3">
+      {% if page_obj.items|length == 0 %}
+        <div class="col-12"><div class="alert alert-light">Không tìm thấy sự kiện.</div></div>
+      {% endif %}
+
+      {% for e in page_obj.items %}
+        <div class="col-lg-4 col-md-6">
+          <div class="card h-100">
+            <img src="{{ e.banner_image or url_for('static','img/event-placeholder.jpg') }}"
+                 class="card-img-top" style="height:160px;object-fit:cover;">
+            <div class="card-body">
+              <h5 class="card-title">{{ e.name }}</h5>
+              <div class="small text-muted mb-1">
+                <i class="fa-regular fa-calendar me-1"></i>
+                {{ e.start_datetime.strftime('%d/%m/%Y %H:%M') if e.start_datetime }}
+              </div>
+              <div class="small text-muted">
+                <i class="fa-solid fa-location-dot me-1"></i>{{ e.address }}
+              </div>
+            </div>
+            <div class="card-footer bg-transparent">
+              <a class="btn btn-primary w-100" href="{{ url_for('event.event_details', event_id=e.id) }}">
+                Xem chi tiết
+              </a>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    {% if page_obj.pages > 1 %}
+      <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+          <li class="page-item {{ 'disabled' if not page_obj.has_prev }}"><a class="page-link" href="?q={{ q }}&page={{ page_obj.prev_num }}">&laquo;</a></li>
+          {% for p in range(1, page_obj.pages + 1) %}
+            <li class="page-item {{ 'active' if p == page_obj.page }}"><a class="page-link" href="?q={{ q }}&page={{ p }}">{{ p }}</a></li>
+          {% endfor %}
+          <li class="page-item {{ 'disabled' if not page_obj.has_next }}"><a class="page-link" href="?q={{ q }}&page={{ page_obj.next_num }}">&raquo;</a></li>
+        </ul>
+      </nav>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

@@ -1,7 +1,6 @@
-
-from flask import Blueprint, render_template, abort
+from flask import Blueprint, render_template, abort,request
 from decimal import Decimal
-from app.dao.event_dao import get_event_by_id
+from app.dao.event_dao import get_event_by_id,search_events
 from app.dao.ticket_dao import get_ticket_type_by_event_id, count_sold_by_ticket_type
 
 events_bp = Blueprint("event", __name__, url_prefix="/events")
@@ -24,3 +23,11 @@ def event_details(event_id: int):
         t.remaining = max(0, (t.quantity or 0) - sold)
 
     return render_template("events/detail.html", event=event, ticket_types=ticket_types)
+
+
+@events_bp.route("/search")
+def search():
+    q = request.args.get("q")
+    page = request.args.get("page", 1, type=int)
+    page_obj = search_events(q=q, page=page, per_page=12)
+    return render_template("events/search.html", page_obj=page_obj, q=q)
