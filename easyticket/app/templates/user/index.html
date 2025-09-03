@@ -12,13 +12,24 @@
                         <h2 class="h4 text-center mb-4">
                             <i class="fas fa-search me-2"></i>Tìm kiếm sự kiện yêu thích
                         </h2>
+
+                         <!-- Chỉ keyword: form GET -> /events?q=... -->
+          <form class="row g-3" method="get" action="{{ url_for('event.search') }}" onsubmit="return submitSearch(event)">
+            <div class="col-md-10">
+              <input type="text"
+                     class="form-control form-control-lg"
+                     id="searchInput"
+                     name="q"
+                     placeholder="Tìm theo tên/mô tả/địa điểm...">
+            </div>
+            <div class="col-md-2">
+              <button class="btn btn-primary-custom w-100 text-white" type="submit">
+                <i class="fas fa-search me-2"></i>Tìm kiếm
+              </button>
+            </div>
+          </form>
+
                         <div class="row g-3">
-                            <div class="col-md-4">
-                                <input type="text"
-                                       class="form-control form-control-lg"
-                                       id="searchInput"
-                                       placeholder="Tìm theo tên sự kiện...">
-                            </div>
                             <div class="col-md-3">
                                 <select class="form-select form-select-lg" id="statusFilter">
                                     <option value="">Tất cả trạng thái</option>
@@ -38,11 +49,7 @@
                                     <option value="food">Ẩm thực</option>
                                 </select>
                             </div>
-                            <div class="col-md-2">
-                                <button class="btn btn-primary-custom w-100 text-white" onclick="searchEvents()">
-                                    <i class="fas fa-search me-2"></i>Tìm kiếm
-                                </button>
-                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -482,6 +489,16 @@
             // Initialize
             renderEvents();
         });
+
+         function submitSearch(e) {
+    // Cho phép submit form bình thường (GET q=...)
+    // nhưng cũng chuẩn hoá khoảng trắng/trim nếu muốn
+    const input = document.getElementById('searchInput');
+    input.value = (input.value || '').trim();
+    // có thể return true để form submit; hoặc redirect thủ công:
+    // window.location.href = "{{ url_for('event.search') }}?q=" + encodeURIComponent(input.value);
+    return true;
+  }
 
         // Add search on Enter key
         document.getElementById('searchInput').addEventListener('keypress', function(e) {
