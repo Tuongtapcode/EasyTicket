@@ -1,6 +1,6 @@
 from decimal import Decimal
 from flask import Blueprint, request, redirect, url_for, render_template, flash, abort
-from sqlalchemy import func
+from flask_login import login_required
 from sqlalchemy.orm import joinedload
 from app import db
 from app.dao.ticket_dao import count_sold_by_ticket_type
@@ -8,6 +8,7 @@ from app.models import (
     Order, OrderDetail, Payment, Ticket, TicketType,
     TicketStatus, PaymentStatus, PaymentMethod
 )
+from app.dao.ticket_dao import get_tickets_of_user
 from flask_login import current_user
 
 orders_bp = Blueprint("order", __name__, url_prefix="/orders")
@@ -199,3 +200,18 @@ def _issue_tickets(order_id: int):
                 ticket_type_id=od.ticket_type_id,
                 event_id=t.event_id,
             ))
+
+
+@orders_bp.route("/my-tickets")
+@login_required
+def my_tickets():
+    q = request.args.get("q", "")
+    status = request.args.get("status")  # ACTIVE/USED/CANCELLED/REFUNDED hoặc None
+    page = request.args.get("page", 1, type=int)
+
+    page_obj = get_tickets_of_user(
+        user_id=current_user.id, status=status, q=q, page=page, per_page=12
+    )
+
+    return render_template("order/my_tickets.html",
+                           page_obj=page_obj, q=q, selected_status=status)
