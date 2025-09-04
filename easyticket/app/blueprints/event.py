@@ -27,7 +27,10 @@ def event_details(event_id: int):
 
 @events_bp.route("/search")
 def search():
-    q = request.args.get("q")
+    q = request.args.get("q","")
     page = request.args.get("page", 1, type=int)
-    page_obj = search_events(q=q, page=page, per_page=12)
-    return render_template("events/search.html", page_obj=page_obj, q=q)
+    event_type_id = request.args.get("event_type_id",type=int)
+
+    page_obj = search_events(q=q, page=page, per_page=12, event_type_id=event_type_id)
+
+    return render_template("events/search.html", page_obj=page_obj, q=q,selected_event_type_id=event_type_id)
