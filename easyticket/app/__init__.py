@@ -18,7 +18,8 @@ RAILWAY_DB   = os.getenv("DB_NAME", "railway")
 app.config["SQLALCHEMY_DATABASE_URI"] = (
     f"mysql+pymysql://{RAILWAY_USER}:{quote(RAILWAY_PASSWORD)}@{RAILWAY_HOST}:{RAILWAY_PORT}/{RAILWAY_DB}?charset=utf8mb4"
 )
-
+# app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:%s@localhost/ticketdb?charset=utf8mb4" % quote(
+#     'Admin@123')
 
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
@@ -39,10 +40,12 @@ from app.blueprints.auth import auth
 from app.blueprints.main import main
 from app.blueprints.event import events_bp
 from app.blueprints.order import orders_bp
+from app.blueprints.organizer import organizer_bp
 app.register_blueprint(auth)
 app.register_blueprint(main)
 app.register_blueprint(events_bp)
 app.register_blueprint(orders_bp)
+app.register_blueprint(organizer_bp)
 
 @login_manager.user_loader
 def load_user(user_id):

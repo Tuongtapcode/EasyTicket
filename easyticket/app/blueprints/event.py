@@ -1,22 +1,31 @@
-from flask import Blueprint, render_template, abort,request
+from flask import Blueprint, render_template, abort, request
 from decimal import Decimal
-from app.dao.event_dao import get_event_by_id,search_events
+from app.dao.event_dao import get_event_by_id, search_events
+from datetime import datetime
+from flask import Blueprint, render_template, abort, flash, redirect, url_for
+from flask_login import login_required, current_user
+from app.dao.event_dao import get_event_by_id
 from app.dao.ticket_dao import get_ticket_type_by_event_id, count_sold_by_ticket_type
+from app.dao.ticket_type_dao import get_ticket_types_by_event
+from app.forms import EventForm, TicketTypeForm
+from app import db, TicketType, dao
+from app.models import Event
 
 events_bp = Blueprint("event", __name__, url_prefix="/events")
 
+
 @events_bp.route("/<int:event_id>")
 def event_details(event_id: int):
-    #Load event
+    # Load event
     event = get_event_by_id(event_id)
     if not event:
         abort(404)
 
-    #Load ticket types
+    # Load ticket types
     ticket_types = get_ticket_type_by_event_id(event_id) or []
     sold_map = count_sold_by_ticket_type([t.id for t in ticket_types])
 
-    #Tính remaining cho từng loại vé (nếu có DAO đếm số vé đã phát hành)
+    # Tính remaining cho từng loại vé (nếu có DAO đếm số vé đã phát hành)
     # count_sold_by_ticket_type trả về dict {ticket_type_id: sold_count}
     for t in ticket_types:
         sold = sold_map.get(t.id, 0)
@@ -27,10 +36,198 @@ def event_details(event_id: int):
 
 @events_bp.route("/search")
 def search():
-    q = request.args.get("q","")
+    q = request.args.get("q", "")
     page = request.args.get("page", 1, type=int)
-    event_type_id = request.args.get("event_type_id",type=int)
+    event_type_id = request.args.get("event_type_id", type=int)
 
     page_obj = search_events(q=q, page=page, per_page=12, event_type_id=event_type_id)
 
-    return render_template("events/search.html", page_obj=page_obj, q=q,selected_event_type_id=event_type_id)
+    return render_template("events/search.html", page_obj=page_obj, q=q, selected_event_type_id=event_type_id)
+
+
+# Create Event - ORGANIZER
+@events_bp.route("/create", methods=["GET", "POST"])  # <-- đã sửa lại
+@login_required
+def create_event():
+    if current_user.user_role.name != "ORGANIZER":
+        flash("Bạn không có quyền tạo sự kiện.", "danger")
+        return redirect(url_for("main.index"))
+
+    form = EventForm()
+    form.set_choices()
+
+    if form.validate_on_submit():
+        new_event = Event(
+            organizer_id=current_user.id,
+            name=form.name.data,
+            description=form.description.data,
+            event_type_id=form.event_type_id.data,
+            category_id=form.category_id.data,
+            start_datetime=form.start_datetime.data,
+            end_datetime=form.end_datetime.data,
+            address=form.address.data,
+            banner_image=form.banner_image.data or None,
+            created_at=datetime.now(),
+            updated_at=datetime.now()
+        )
+        db.session.add(new_event)
+        db.session.commit()
+
+        flash("Sự kiện đã được tạo thành công!", "success")
+        return redirect(url_for("organizer.dashboard"))
+
+    return render_template("events/create_event.html", form=form)
+
+
+@events_bp.route("/events/<int:event_id>/edit", methods=["GET", "POST"])
+@login_required
+def edit_event(event_id):
+    event = get_event_by_id(event_id)
+    if current_user.user_role.name != "ORGANIZER" or event.organizer_id != current_user.id:
+        flash("Bạn không có quyền chỉnh sửa sự kiện này.", "danger")
+        return redirect(url_for("main.index"))
+    form = EventForm(obj=event)
+    form.set_choices()
+    if form.validate_on_submit():
+        event.name = form.name.data
+        event.description = form.description.data
+        event.event_type_id = form.event_type_id.data
+        event.category_id = form.category_id.data
+        event.start_datetime = form.start_datetime.data
+        event.end_datetime = form.end_datetime.data
+        event.address = form.address.data
+        event.banner_image = form.banner_image.data or None
+        event.updated_at = datetime.now()
+
+        db.session.commit()
+        flash("Sự kiện đã được cập nhật!", "success")
+        return redirect(url_for("event.view_event", event_id=event.id))
+
+    return render_template("events/create_event.html", form=form, event=event)
+
+
+@events_bp.route("/<int:event_id>/delete", methods=["DELETE"])
+@login_required
+def api_delete_event(event_id):
+    event = get_event_by_id(event_id)
+    if not event:
+        return {"error": "Event not found"}, 404
+
+    # kiểm tra quyền
+    if current_user.user_role.name != "ORGANIZER" or event.organizer_id != current_user.id:
+        return {"error": "Unauthorized"}, 403
+
+    # xoá sự kiện
+    db.session.delete(event)
+    db.session.commit()
+    return {"message": "Deleted successfully"}, 200
+
+
+@events_bp.route("/<int:event_id>/ticket-types", methods=["GET"])
+def api_get_ticket_types(event_id):
+    q = request.args.get("q", "")
+
+    # Lấy tất cả ticket types (không phân trang)
+    query = TicketType.query.filter(TicketType.event_id == event_id)
+    if q:
+        query = query.filter(TicketType.name.ilike(f"%{q}%"))
+
+    ticket_types = query.order_by(TicketType.price.asc()).all()
+    event = get_event_by_id(event_id)
+
+    # Tính toán số liệu
+    total_quantity = sum(t.quantity for t in ticket_types)
+    total_sold = 0
+    total_revenue = 0
+    best_selling_ticket = 0
+
+    return render_template(
+        "events/event_ticket_types.html",
+        event=event,
+        ticket_types=ticket_types,
+        total_quantity=total_quantity,
+        total_sold=total_sold,
+        total_revenue=total_revenue,
+        best_selling_ticket=best_selling_ticket,
+        q=q
+    )
+
+
+@events_bp.route("/<int:event_id>/ticket-types/create", methods=["GET", "POST"])
+@login_required
+def create_ticket_type(event_id):
+    event = get_event_by_id(event_id)
+
+    # chỉ organizer của sự kiện mới được tạo vé
+    if current_user.user_role.name != "ORGANIZER" or event.organizer_id != current_user.id:
+        flash("Bạn không có quyền tạo loại vé cho sự kiện này.", "danger")
+        return redirect(url_for("main.index"))
+
+    form = TicketTypeForm()
+
+    if form.validate_on_submit():
+        new_ticket_type = TicketType(
+            event_id=event.id,
+            name=form.name.data,
+            description=form.description.data,
+            quantity=form.quantity.data,
+            price=form.price.data,
+            active=bool(form.active.data),  # 1 → True, 0 → False
+            created_at=datetime.now(),
+            updated_at=datetime.now()
+        )
+        db.session.add(new_ticket_type)
+        db.session.commit()
+
+        flash("Loại vé đã được tạo thành công!", "success")
+        return redirect(url_for("event.api_get_ticket_types", event_id=event.id))
+    return render_template("events/create_ticket_types.html", form=form, event=event)
+
+
+@events_bp.route("/ticket-types/<int:ticket_type_id>/edit", methods=["GET", "POST"])
+@login_required
+def edit_ticket_type(ticket_type_id):
+    ticket_type = dao.ticket_type_dao.get_ticket_type_by_id(ticket_type_id)  # <-- đổi tên hàm cho đúng
+    event = ticket_type.event
+
+    if current_user.user_role.name != "ORGANIZER" or event.organizer_id != current_user.id:
+        flash("Bạn không có quyền chỉnh sửa loại vé này.", "danger")
+        return redirect(url_for("main.index"))
+
+    form = TicketTypeForm(obj=ticket_type)
+    form.set_active_value(ticket_type)  # set giá trị active ban đầu
+
+    if form.validate_on_submit():
+        ticket_type.name = form.name.data
+        ticket_type.description = form.description.data
+        ticket_type.quantity = form.quantity.data
+        ticket_type.price = form.price.data
+        ticket_type.active = bool(form.active.data)
+        ticket_type.updated_at = datetime.now()
+
+        db.session.commit()
+        flash("Loại vé đã được cập nhật!", "success")
+        return redirect(url_for("event.api_get_ticket_types", event_id=event.id))
+
+    return render_template("events/create_ticket_types.html", form=form, ticket_type=ticket_type, event=event)
+
+
+@events_bp.route("/ticket-types/<int:ticket_type_id>/delete", methods=["DELETE"])
+@login_required
+def api_delete_ticket_type(ticket_type_id):
+    ticket_type = dao.ticket_type_dao.get_ticket_type_by_id(ticket_type_id)
+    if not ticket_type:
+        return {"error": "Ticket type not found"}, 404
+
+    event = ticket_type.event
+    # chỉ organizer của sự kiện mới có quyền xoá loại vé
+    if current_user.user_role.name != "ORGANIZER" or event.organizer_id != current_user.id:
+        return {"error": "Unauthorized"}, 403
+
+    try:
+        db.session.delete(ticket_type)
+        db.session.commit()
+        return {"message": "Deleted successfully"}, 200
+    except Exception as e:
+        db.session.rollback()
+        return {"error": f"Error deleting ticket type: {str(e)}"}, 500
