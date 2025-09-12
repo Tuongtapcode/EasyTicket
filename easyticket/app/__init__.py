@@ -50,3 +50,10 @@ app.register_blueprint(organizer_bp)
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
+# sau các app.register_blueprint(...) hiện có
+from app.blueprints.qr import qr_bp
+app.register_blueprint(qr_bp)
+
+# đặt secret để ký QR (đặt gần chỗ app.config DB)
+app.config["QR_SECRET"] = os.getenv("QR_SECRET", "change-this-to-a-long-random-secret")
