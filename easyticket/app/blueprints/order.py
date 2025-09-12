@@ -10,6 +10,8 @@ from app.models import (
 )
 from app.dao.ticket_dao import get_tickets_of_user
 from flask_login import current_user
+from app.utils.qr_utils import sign_payload  # ở đầu file
+
 
 orders_bp = Blueprint("order", __name__, url_prefix="/orders")
 
@@ -190,16 +192,38 @@ def _issue_tickets(order_id: int):
         sold[od.ticket_type_id] = sold.get(od.ticket_type_id, 0) + od.quantity
 
     # Tạo Ticket
+
+    # for od in ods:
+    #     t = od.ticket_type
+    #     for _ in range(od.quantity):
+    #         db.session.add(Ticket(
+    #             ticket_code=_gen_ticket_code(),
+    #             status=TicketStatus.ACTIVE,
+    #             order_id=order_id,
+    #             ticket_type_id=od.ticket_type_id,
+    #             event_id=t.event_id,
+    #         ))
+    # Tạo Ticket + gắn QR
     for od in ods:
-        t = od.ticket_type
+        ttype = od.ticket_type
         for _ in range(od.quantity):
-            db.session.add(Ticket(
+            tk = Ticket(
                 ticket_code=_gen_ticket_code(),
                 status=TicketStatus.ACTIVE,
                 order_id=order_id,
                 ticket_type_id=od.ticket_type_id,
-                event_id=t.event_id,
-            ))
+                event_id=ttype.event_id,
+            )
+            db.session.add(tk)
+            db.session.flush()  # lấy tk.id
+
+            # ký QR cho vé
+            payload = {"tid": tk.id, "oid": order_id, "eid": ttype.event_id}
+            tk.qr_data = sign_payload(payload)
+            tk.issued_at = datetime.utcnow()
+
+    db.session.commit()
+
 
 
 @orders_bp.route("/my-tickets")
