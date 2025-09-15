@@ -4,6 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from urllib.parse import quote
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager
+from flask_admin import Admin
 import os
 
 app = Flask(__name__)
@@ -29,6 +30,11 @@ login_manager = LoginManager(app)
 login_manager.login_view = "auth.login"
 migrate = Migrate(app, db)
 
+#Flask_Admin
+admin = Admin(name="EasyTicket Admin",template_mode="bootstrap4")
+admin.init_app(app)
+
+
 #import tất cả models để Alembic detect
 from app.models import (
     User, Category, EventType, Event,
@@ -41,11 +47,15 @@ from app.blueprints.main import main
 from app.blueprints.event import events_bp
 from app.blueprints.order import orders_bp
 from app.blueprints.organizer import organizer_bp
+from app.blueprints.vnpay import vnpay_bp
+from app.blueprints.momo import bp as momo_bp
 app.register_blueprint(auth)
 app.register_blueprint(main)
 app.register_blueprint(events_bp)
 app.register_blueprint(orders_bp)
 app.register_blueprint(organizer_bp)
+app.register_blueprint(vnpay_bp)
+app.register_blueprint(momo_bp)
 
 @login_manager.user_loader
 def load_user(user_id):

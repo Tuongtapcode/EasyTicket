@@ -49,14 +49,37 @@
         </table>
 
         <form method="post" action="{{ url_for('order.pay', order_id=order.id) }}">
-          <div class="d-flex justify-content-end gap-2">
-            <a href="{{ url_for('event.event_details', event_id=order.order_details[0].ticket_type.event_id) }}"
-               class="btn btn-outline-secondary">Quay lại</a>
-            <button class="btn btn-success" type="submit">
-              <i class="fas fa-credit-card me-2"></i>Thanh toán
-            </button>
-          </div>
-        </form>
+  <div class="row g-3 mt-3">
+    <div class="col-12">
+      <label class="form-label fw-semibold mb-2">Phương thức thanh toán</label>
+
+      <div class="border rounded-3 p-3 mb-2 d-flex align-items-center">
+        <input class="form-check-input me-3" type="radio" name="gateway" id="pm_vnpay" value="VNPAY" checked>
+        <i class="fa-solid fa-qrcode me-3"></i>
+        <label class="form-check-label" for="pm_vnpay">
+          <div class="fw-semibold">VNPay</div>
+          <small class="text-muted">Thẻ ATM / QR</small>
+        </label>
+      </div>
+
+      <div class="border rounded-3 p-3 d-flex align-items-center">
+        <input class="form-check-input me-3" type="radio" name="gateway" id="pm_momo" value="MOMO">
+        <i class="fa-solid fa-wallet me-3"></i>
+        <label class="form-check-label" for="pm_momo">
+          <div class="fw-semibold">MoMo</div>
+          <small class="text-muted">Ví MoMo</small>
+        </label>
+      </div>
+
+    <div class="col-12 d-flex justify-content-end gap-2 mt-3">
+      <a href="{{ url_for('event.event_details', event_id=order.order_details[0].ticket_type.event_id) }}"
+         class="btn btn-outline-secondary">Quay lại</a>
+      <button class="btn btn-success" type="submit">
+        <i class="fa-solid fa-credit-card me-2"></i>Thanh toán
+      </button>
+    </div>
+  </div>
+</form>
       </div>
     </div>
 
