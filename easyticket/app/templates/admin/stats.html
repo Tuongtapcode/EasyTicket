@@ -1,23 +1,532 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thống kê hệ thống - EasyTicket Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .stats-card {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+            margin-bottom: 20px;
+        }
+        .stats-card:hover {
+            transform: translateY(-2px);
+        }
+        .card-icon {
+            font-size: 2rem;
+            opacity: 0.7;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 20px;
+        }
+    </style>
 </head>
 <body>
-<div class="container-fluid p-3">
-    <h3>Doanh thu theo ngày</h3>
-    <canvas id="revenueChart" style="max-height:420px;"></canvas>
-  </div>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script>
-    const labels = {{ labels|tojson }};
-    const data = {{ data|tojson }};
-    new Chart(document.getElementById('revenueChart'), {
-      type: 'line',
-      data: { labels, datasets: [{ label: 'Revenue', data }] },
-      options: { responsive: true, maintainAspectRatio: false }
-    });
-  </script>
+    <div class="container-fluid py-4">
+        <h1 class="mb-4">📊 Thống kê hệ thống EasyTicket</h1>
+
+        <!-- Summary Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3 mb-3">
+                <div class="card stats-card bg-primary text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h6 class="card-title">Tổng người dùng</h6>
+                                <h2>{{ total_users }}</h2>
+                                <small>+{{ new_users }} mới (7 ngày)</small>
+                            </div>
+                            <i class="fas fa-users card-icon"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3 mb-3">
+                <div class="card stats-card bg-success text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h6 class="card-title">Tổng sự kiện</h6>
+                                <h2>{{ total_events }}</h2>
+                                <small>+{{ new_events }} mới (7 ngày)</small>
+                            </div>
+                            <i class="fas fa-calendar-alt card-icon"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3 mb-3">
+                <div class="card stats-card bg-info text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h6 class="card-title">Tổng đơn hàng</h6>
+                                <h2>{{ total_orders }}</h2>
+                                <small>+{{ new_orders }} mới (7 ngày)</small>
+                            </div>
+                            <i class="fas fa-shopping-cart card-icon"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3 mb-3">
+                <div class="card stats-card bg-warning text-dark">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h6 class="card-title">Tổng doanh thu</h6>
+                                <h2>{{ "{:,.0f}".format(total_revenue) }} ₫</h2>
+                                <small>{{ "{:,.0f}".format(recent_revenue) }} ₫ (7 ngày)</small>
+                            </div>
+                            <i class="fas fa-money-bill-wave card-icon"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="row mb-4">
+
+            <!-- THỐNG KÊ THEO THỜI GIAN -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>📈 Thống kê theo thời gian</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="nav nav-tabs" id="timeTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="monthly-tab" data-bs-toggle="tab" data-bs-target="#monthly" type="button" role="tab">Theo tháng</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="quarterly-tab" data-bs-toggle="tab" data-bs-target="#quarterly" type="button" role="tab">Theo quý</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="yearly-tab" data-bs-toggle="tab" data-bs-target="#yearly" type="button" role="tab">Theo năm</button>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content" id="timeTabsContent">
+                            <!-- Theo tháng -->
+                            <div class="tab-pane fade show active" id="monthly" role="tabpanel">
+                                <div class="row mt-3">
+                                    <div class="col-md-6">
+                                        <div class="chart-container">
+                                            <canvas id="monthlyEventsChart"></canvas>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="chart-container">
+                                            <canvas id="monthlyRevenueChart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Theo quý -->
+                            <div class="tab-pane fade" id="quarterly" role="tabpanel">
+                                <div class="row mt-3">
+                                    <div class="col-md-6">
+                                        <div class="chart-container">
+                                            <canvas id="quarterlyEventsChart"></canvas>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="chart-container">
+                                            <canvas id="quarterlyRevenueChart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Theo năm -->
+                            <div class="tab-pane fade" id="yearly" role="tabpanel">
+                                <div class="row mt-3">
+                                    <div class="col-md-6">
+                                        <div class="chart-container">
+                                            <canvas id="yearlyEventsChart"></canvas>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="chart-container">
+                                            <canvas id="yearlyRevenueChart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+            <!-- Event Status Chart -->
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>📊 Phân bố trạng thái sự kiện</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="eventStatusChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Role Chart -->
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>👥 Phân bố vai trò người dùng</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="userRoleChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Charts -->
+        <div class="row mb-4">
+            <!-- Top Events Chart -->
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>🏆 Top sự kiện bán chạy nhất</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="topEventsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Revenue Trend Chart -->
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>💵 Xu hướng doanh thu</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="revenueTrendChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Dữ liệu từ Flask
+        const eventStatusData = {
+            labels: [{% for status, count in event_status_stats %}'{{ status.value }}'{% if not loop.last %}, {% endif %}{% endfor %}],
+            counts: [{% for status, count in event_status_stats %}{{ count }}{% if not loop.last %}, {% endif %}{% endfor %}]
+        };
+
+        const userRoleData = {
+            labels: [{% for role, count in user_role_stats %}'{{ role.value }}'{% if not loop.last %}, {% endif %}{% endfor %}],
+            counts: [{% for role, count in user_role_stats %}{{ count }}{% if not loop.last %}, {% endif %}{% endfor %}]
+        };
+
+        const topEventsData = {
+            labels: [{% for event, tickets_sold in top_events %}'{{ event|truncate(20) }}'{% if not loop.last %}, {% endif %}{% endfor %}],
+            ticketsSold: [{% for event, tickets_sold in top_events %}{{ tickets_sold }}{% if not loop.last %}, {% endif %}{% endfor %}]
+        };
+
+        const monthlyData = {
+            labels: [{% for label in monthly_labels %}'{{ label }}'{% if not loop.last %}, {% endif %}{% endfor %}],
+            events: [{% for count in monthly_events %}{{ count }}{% if not loop.last %}, {% endif %}{% endfor %}],
+            revenues: [{% for revenue in monthly_revenues %}{{ revenue }}{% if not loop.last %}, {% endif %}{% endfor %}]
+        };
+
+        const quarterlyData = {
+            labels: [{% for label in quarterly_labels %}'{{ label }}'{% if not loop.last %}, {% endif %}{% endfor %}],
+            events: [{% for count in quarterly_events %}{{ count }}{% if not loop.last %}, {% endif %}{% endfor %}],
+            revenues: [{% for revenue in quarterly_revenues %}{{ revenue }}{% if not loop.last %}, {% endif %}{% endfor %}]
+        };
+
+        const yearlyData = {
+            labels: [{% for label in yearly_labels %}'{{ label }}'{% if not loop.last %}, {% endif %}{% endfor %}],
+            events: [{% for count in yearly_events %}{{ count }}{% if not loop.last %}, {% endif %}{% endfor %}],
+            revenues: [{% for revenue in yearly_revenues %}{{ revenue }}{% if not loop.last %}, {% endif %}{% endfor %}]
+        };
+
+        // Màu sắc cho charts
+        const colors = [
+            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
+            '#FF9F40', '#FF6384', '#C9CBCF', '#4BC0C0', '#FFCD56'
+        ];
+
+        // 1. Biểu đồ trạng thái sự kiện (Pie Chart)
+        new Chart(document.getElementById('eventStatusChart'), {
+            type: 'pie',
+            data: {
+                labels: eventStatusData.labels,
+                datasets: [{
+                    data: eventStatusData.counts,
+                    backgroundColor: colors,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    }
+                }
+            }
+        });
+
+        // 2. Biểu đồ vai trò người dùng (Doughnut Chart)
+        new Chart(document.getElementById('userRoleChart'), {
+            type: 'doughnut',
+            data: {
+                labels: userRoleData.labels,
+                datasets: [{
+                    data: userRoleData.counts,
+                    backgroundColor: colors,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    }
+                }
+            }
+        });
+
+        // 3. Biểu đồ top sự kiện (Bar Chart)
+        new Chart(document.getElementById('topEventsChart'), {
+            type: 'bar',
+            data: {
+                labels: topEventsData.labels,
+                datasets: [{
+                    label: 'Số vé bán',
+                    data: topEventsData.ticketsSold,
+                    backgroundColor: '#36A2EB',
+                    borderColor: '#36A2EB',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Số vé'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Sự kiện'
+                        }
+                    }
+                }
+            }
+        });
+
+        // 4. Biểu đồ xu hướng doanh thu (Line Chart)
+        const revenueTrendData = {
+    labels: [{% for label in monthly_labels %}'{{ label }}'{% if not loop.last %}, {% endif %}{% endfor %}],
+    revenues: [{% for revenue in monthly_revenues %}{{ revenue }}{% if not loop.last %}, {% endif %}{% endfor %}]
+};
+
+        new Chart(document.getElementById('revenueTrendChart'), {
+            type: 'line',
+            data: {
+                labels: revenueTrendData.labels,
+                datasets: [{
+                    label: 'Doanh thu (VND)',
+                    data: revenueTrendData.revenues,
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 2,
+                    tension: 0.1,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Doanh thu (VND)'
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return value.toLocaleString('vi-VN') + ' ₫';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Biểu đồ theo tháng
+        new Chart(document.getElementById('monthlyEventsChart'), {
+            type: 'bar',
+            data: {
+                labels: monthlyData.labels,
+                datasets: [{
+                    label: 'Số sự kiện',
+                    data: monthlyData.events,
+                    backgroundColor: '#36A2EB',
+                    borderColor: '#36A2EB',
+                    borderWidth: 1
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        new Chart(document.getElementById('monthlyRevenueChart'), {
+            type: 'line',
+            data: {
+                labels: monthlyData.labels,
+                datasets: [{
+                    label: 'Doanh thu (VND)',
+                    data: monthlyData.revenues,
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 2,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        ticks: {
+                            callback: function(value) {
+                                return value.toLocaleString('vi-VN') + ' ₫';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Biểu đồ theo quý (tương tự cho yearly)
+        new Chart(document.getElementById('quarterlyEventsChart'), {
+            type: 'bar',
+            data: {
+                labels: quarterlyData.labels,
+                datasets: [{
+                    label: 'Số sự kiện',
+                    data: quarterlyData.events,
+                    backgroundColor: '#FF6384',
+                    borderColor: '#FF6384',
+                    borderWidth: 1
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        new Chart(document.getElementById('quarterlyRevenueChart'), {
+            type: 'line',
+            data: {
+                labels: quarterlyData.labels,
+                datasets: [{
+                    label: 'Doanh thu (VND)',
+                    data: quarterlyData.revenues,
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 2,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        ticks: {
+                            callback: function(value) {
+                                return value.toLocaleString('vi-VN') + ' ₫';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Biểu đồ theo năm
+        new Chart(document.getElementById('yearlyEventsChart'), {
+            type: 'bar',
+            data: {
+                labels: yearlyData.labels,
+                datasets: [{
+                    label: 'Số sự kiện',
+                    data: yearlyData.events,
+                    backgroundColor: '#FFCE56',
+                    borderColor: '#FFCE56',
+                    borderWidth: 1
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        new Chart(document.getElementById('yearlyRevenueChart'), {
+            type: 'line',
+            data: {
+                labels: yearlyData.labels,
+                datasets: [{
+                    label: 'Doanh thu (VND)',
+                    data: yearlyData.revenues,
+                    backgroundColor: 'rgba(255, 206, 86, 0.2)',
+                    borderColor: 'rgba(255, 206, 86, 1)',
+                    borderWidth: 2,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        ticks: {
+                            callback: function(value) {
+                                return value.toLocaleString('vi-VN') + ' ₫';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
 </body>
 </html>

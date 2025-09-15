@@ -74,6 +74,8 @@ class User(db.Model, UserMixin):
     def __repr__(self):
         return f"<User id={self.id} username={self.username!r}>"
 
+    def __str__(self):
+        return f"{self.first_name} {self.last_name}"
 
 class Category(db.Model):
     __tablename__ = "category"
@@ -89,6 +91,8 @@ class Category(db.Model):
     def __repr__(self):
         return f"<Category id={self.id} name={self.name!r}>"
 
+    def __str__(self):
+        return self.name
 
 class EventType(db.Model):
     __tablename__ = "event_type"
@@ -103,6 +107,8 @@ class EventType(db.Model):
     def __repr__(self):
         return f"<EventType id={self.id} name={self.name!r}>"
 
+    def __str__(self):
+        return self.name
 
 class Event(db.Model):
     __tablename__ = "event"
@@ -201,7 +207,8 @@ class Order(db.Model):
     total_amount = Column(DECIMAL(10, 2), nullable=False, default=Decimal("0.00"))
     extra_fee = Column(DECIMAL(10, 2), nullable=False, default=Decimal("0.00"))
     discount = Column(DECIMAL(10, 2), nullable=False, default=Decimal("0.00"))
-
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
     # relationships
     customer = relationship("User", back_populates="orders")
     tickets = relationship("Ticket", back_populates="order")
