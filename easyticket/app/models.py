@@ -1,7 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum as PyEnum
-
 from flask_login import UserMixin
 from sqlalchemy import (
     Column, Integer, String, Boolean, Enum, DateTime, ForeignKey, DECIMAL, Numeric, Index

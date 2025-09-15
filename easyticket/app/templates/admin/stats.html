@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<div class="container-fluid p-3">
+    <h3>Doanh thu theo ngày</h3>
+    <canvas id="revenueChart" style="max-height:420px;"></canvas>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    const labels = {{ labels|tojson }};
+    const data = {{ data|tojson }};
+    new Chart(document.getElementById('revenueChart'), {
+      type: 'line',
+      data: { labels, datasets: [{ label: 'Revenue', data }] },
+      options: { responsive: true, maintainAspectRatio: false }
+    });
+  </script>
+</body>
+</html>
