@@ -259,3 +259,28 @@ class Payment(db.Model):
 
     def __repr__(self):
         return f"<Payment id={self.id} order_id={self.order_id} status={self.status.value}>"
+# --- trong class Ticket (giữ nguyên các field khác) ---
+class Ticket(db.Model):
+    __tablename__ = "ticket"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    ticket_code = Column(String(50), unique=True, nullable=False, index=True)
+    status = Column(Enum(TicketStatus), default=TicketStatus.ACTIVE, nullable=False, index=True)
+
+    order_id = Column(Integer, ForeignKey("order.id"))
+    ticket_type_id = Column(Integer, ForeignKey("ticket_type.id"), nullable=False)
+    event_id = Column(Integer, ForeignKey("event.id"), nullable=False)
+
+    # NEW: chuỗi QR đã ký + thời điểm phát hành
+    qr_data = Column(String(256), unique=True, nullable=True, index=True)
+    issued_at = Column(DateTime, nullable=True)
+
+    # khi vé chưa sử dụng, để NULL
+    use_at = Column(DateTime, nullable=True)
+
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+
+    order = relationship("Order", back_populates="tickets")
+    ticket_type = relationship("TicketType", back_populates="tickets")
+    event = relationship("Event", back_populates="tickets")
