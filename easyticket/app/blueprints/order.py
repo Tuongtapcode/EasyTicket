@@ -3,16 +3,18 @@ from flask import Blueprint, request, redirect, url_for, render_template, flash,
 from flask_login import login_required
 from sqlalchemy.orm import joinedload
 from app import db
+from app.blueprints.vnpay import vnpay_service
 from app.dao.ticket_dao import count_sold_by_ticket_type
 from app.models import (
     Order, OrderDetail, Payment, Ticket, TicketType,
     TicketStatus, PaymentStatus, PaymentMethod
 )
+from app.dao.order_dao import *
 from app.dao.ticket_dao import get_tickets_of_user
 from flask_login import current_user
+from app.services.momo_service import MoMoService, AccessDeniedException
+from app.services.vnpay_service import VNPayServiceImpl, AccessDeniedException
 from app.utils.qr_utils import sign_payload  # ở đầu file
-
-
 orders_bp = Blueprint("order", __name__, url_prefix="/orders")
 
 def _gen_order_code():
@@ -129,36 +131,42 @@ def method_for_gateway(gateway: str) -> PaymentMethod:
 
 # ========== 3) Tạo Payment và “giả lập” thanh toán thành công ==========
 @orders_bp.route("/<int:order_id>/pay", methods=["POST"])
+@login_required
 def pay(order_id):
-    order = db.session.get(Order, order_id)
-    if not order:
-        abort(404)
+    order = db.session.get(Order, order_id) or abort(404)
 
-    #gateway = request.form.get("gateway")
-    gateway = "VN_PAY" #Tam thoi de test
-    p = Payment(
-        order_id=order.id,
-        amount=order.total_amount,
-        payment_method=method_for_gateway(gateway),
-        status=PaymentStatus.PENDING,
-        transaction_id=_gen_txn_id(),
-    )
-    db.session.add(p); db.session.commit()
+    if order.customer_id != current_user.id:
+        abort(403, description="Bạn không sở hữu đơn hàng này")
 
-    # Ở bản thật: redirect đến cổng (VNPay/MoMo) và cổng sẽ gọi callback.
-    # Ở bản demo: chuyển thẳng sang mock-success.
-    return redirect(url_for("order.mock_success", payment_id=p.id))
 
-@orders_bp.route("/payment/mock-success/<int:payment_id>")
-def mock_success(payment_id):
-    p = db.session.get(Payment, payment_id)
-    if not p:
-        abort(404)
-    if p.status != PaymentStatus.SUCCESS:
-        p.status = PaymentStatus.SUCCESS
-        _issue_tickets(p.order_id)
-        db.session.commit()
-    return redirect(url_for("order.success", order_id=p.order_id))
+    gateway = (request.form.get("gateway") or "").upper()
+
+    if gateway == "VNPAY":
+        try:
+           res = VNPayServiceImpl().createVnpayPayment(order_id=order_id,request=request, amount_override=order.total_amount)
+        except AccessDeniedException as ex:
+            flash(str(ex), "danger")
+            return redirect(url_for("order.checkout", order_id=order_id))
+        pay_url = res.get("payUrl")
+        if not pay_url:
+            flash("Không tạo được phiên thanh toán VNPay", "danger")
+            return redirect(url_for("order.checkout", order_id=order_id))
+        return redirect(pay_url, code=302)#Di thang toi trang thanh toan vnpay
+
+    if gateway == "MOMO":
+        try:
+            res = MoMoService().createMomoPayment(order_id=order_id, amount_override=order.total_amount)
+        except AccessDeniedException as ex:
+            flash(str(ex), "danger")
+            return redirect(url_for("order.checkout", order_id=order_id))
+        pay_url = res.get("payUrl")
+        if not pay_url:
+            flash("Không tạo được phiên thanh toán MoMo", "danger")
+            return redirect(url_for("order.checkout", order_id=order_id))
+        return redirect(pay_url, 302)
+
+    flash("Vui lòng chọn phương thức thanh toán.", "warning")
+    return redirect(url_for("order.checkout", order_id=order_id))
 
 # ========== 4) Trang thành công + danh sách vé ==========
 @orders_bp.route("/<int:order_id>/success")
@@ -239,3 +247,34 @@ def my_tickets():
 
     return render_template("order/my_tickets.html",
                            page_obj=page_obj, q=q, selected_status=status)
+
+@orders_bp.route("/payment/momo/return")
+def momo_return():
+    svc = MoMoService()
+    info = svc.verifyReturn(request.args.to_dict())
+
+    status = "SUCCESS" if info["ok"] and str(info["resultCode"]) == "0" else "FAILED"
+    return render_template(
+        "payment/payment_return.html",
+        status=status,
+        orderId=info["orderId"],
+        paymentId=info["paymentId"],
+        amount=info["amount"],
+        transId=info["transId"],
+        message=info["message"],
+        resultCode=info["resultCode"],
+    ), (200 if status=="SUCCESS" else 400)
+
+@orders_bp.route("/payment/vnpay/return")
+def vnpay_return():
+    info = VNPayServiceImpl.verifyReturn(request.args.to_dict())
+    status = "SUCCESS" if info["ok"] and str(info["resultCode"]) == "00" else "FAILED"
+    return render_template("payment/payment_return.html", **{
+        "status": status,
+        "orderId": info["orderId"],
+        "paymentId": info["paymentId"],
+        "amount": info["amount"],
+        "transId": info["transId"],
+        "message": info["message"],
+        "resultCode": info["resultCode"],
+    }), (200 if status == "SUCCESS" else 400)
