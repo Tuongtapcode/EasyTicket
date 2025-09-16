@@ -75,6 +75,16 @@
                   Hướng dẫn sử dụng
                 </a>
                 {% endif %}
+                  <div class="card-footer bg-transparent">
+  {% if t.qr_data and t.status.name == 'ACTIVE' %}
+    <div class="mt-2 text-center">
+      <img src="{{ qr_img(t.qr_data) }}" alt="QR {{ t.ticket_code }}" style="width:160px;height:160px">
+    </div>
+  {% elif t.status.name == 'USED' %}
+    <span class="badge bg-secondary">ĐÃ CHECK-IN</span>
+  {% endif %}
+</div>
+
               </div>
             </div>
           </div>

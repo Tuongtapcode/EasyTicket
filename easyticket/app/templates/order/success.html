@@ -14,6 +14,11 @@
             <div class="small text-muted">Mã vé</div>
             <div class="h5">{{ t.ticket_code }}</div>
             <div class="small">Trạng thái: <strong>{{ t.status.name }}</strong></div>
+               {% if t.qr_data %}
+    <div class="mt-3 text-center">
+      <img src="{{ qr_img(t.qr_data) }}" alt="QR {{ t.ticket_code }}" style="width:180px;height:180px">
+    </div>
+  {% endif %}
           </div>
         </div>
       </div>

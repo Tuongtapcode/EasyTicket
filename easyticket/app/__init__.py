@@ -5,7 +5,6 @@ from urllib.parse import quote
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager
 import os
-
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "dev-secret-change-me")
 
@@ -57,3 +56,7 @@ app.register_blueprint(qr_bp)
 
 # đặt secret để ký QR (đặt gần chỗ app.config DB)
 app.config["QR_SECRET"] = os.getenv("QR_SECRET", "change-this-to-a-long-random-secret")
+
+from app.utils.qr_image import make_qr_png_base64
+app.jinja_env.globals["qr_img"] = make_qr_png_base64
+

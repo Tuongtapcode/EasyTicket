@@ -10,7 +10,10 @@ from app.models import (
 )
 from app.dao.ticket_dao import get_tickets_of_user
 from flask_login import current_user
-from app.utils.qr_utils import sign_payload  # ở đầu file
+from app.helper import sign_payload
+from datetime import datetime
+
+
 
 
 orders_bp = Blueprint("order", __name__, url_prefix="/orders")

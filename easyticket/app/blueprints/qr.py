@@ -3,7 +3,7 @@ from flask import Blueprint, jsonify, request
 from app.dao.ticket_dao import (
     get_ticket_by_id, get_ticket_by_qr, save_ticket_qr, mark_checked_in
 )
-from app.utils.qr_utils import sign_payload, verify_token
+from app.helper import sign_payload, verify_token
 from app.models import TicketStatus
 
 qr_bp = Blueprint("qr", __name__, url_prefix="/api/qr")
