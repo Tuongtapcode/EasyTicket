@@ -8,8 +8,6 @@ from app import admin,db
 from sqlalchemy import func, extract, case
 from datetime import datetime, timedelta
 
-
-
 # Chỉ cho phép user role=ADMIN vào Admin
 class SecureModelView(ModelView):
     def is_accessible(self):
@@ -19,7 +17,7 @@ class SecureModelView(ModelView):
         return redirect(url_for("auth.login", next=request.url))
 
 
-class StatsView(AdminIndexView):
+class StatsView(BaseView):
     @expose('/')
     def index(self):
         # Tổng số liệu cơ bản
@@ -140,7 +138,22 @@ class StatsView(AdminIndexView):
         flash('Bạn không có quyền truy cập trang này.', 'error')
         return redirect(url_for('auth.login', next=request.url))
 
-admin.add_view(ModelView(User, db.session))
-admin.add_view(ModelView(Event, db.session, endpoint="admin_events", url="/admin/events" ))
+
+class UserView(ModelView):
+    can_view_details = True
+    edit_modal = True
+    details_modal = True
+    column_exclude_list = ['password','avatar']
+    column_filters = ['username', 'email','phone']
+
+class EventView(ModelView):
+    can_view_details = True
+    edit_modal = True
+    details_modal = True
+    can_view_details_modal = True
+    column_exclude_list = ['banner_image']
+
+admin.add_view(UserView(User, db.session))
+admin.add_view(EventView(Event, db.session, endpoint="admin_events", url="/admin/events" ))
 admin.add_view(StatsView(name="Thống kê", endpoint="stats", url="/admin/stats"))
 
