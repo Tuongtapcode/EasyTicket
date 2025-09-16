@@ -17,7 +17,7 @@ class SecureModelView(ModelView):
         return redirect(url_for("auth.login", next=request.url))
 
 
-class StatsView(AdminIndexView):
+class StatsView(BaseView):
     @expose('/')
     def index(self):
         # Tổng số liệu cơ bản
