@@ -13,7 +13,7 @@
         <select class="form-select" name="status" onchange="this.form.submit()">
           <option value="">Tất cả trạng thái</option>
           {% for s in ['ACTIVE','USED','CANCELLED','REFUNDED'] %}
-            <option value="{{ s }}" {{ 'selected' if selected_status==s else '' }}>{{ s }}</option>
+            <option value="{{ s }}" {% if selected_status == s %}selected{% endif %}>{{ s }}</option>
           {% endfor %}
         </select>
       </div>
