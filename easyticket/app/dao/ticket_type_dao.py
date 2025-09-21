@@ -1,5 +1,6 @@
-from app import TicketType
-from app import db
+from app.models import db, TicketType
+from sqlalchemy import or_, func
+
 
 def get_ticket_type_by_id(ticket_type_id):
     return TicketType.query.get_or_404(ticket_type_id)

@@ -1,6 +1,8 @@
 from app.models import db, Event, EventStatus, EventType
-from app.models import db, Event
-from sqlalchemy import or_
+from sqlalchemy import or_, func
+from sqlalchemy.orm import joinedload
+from datetime import datetime
+
 
 
 # Lay het

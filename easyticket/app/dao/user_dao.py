@@ -1,4 +1,4 @@
-from app import db
+from app.models import db
 from app.models import User, Event, UserRole
 from werkzeug.security import generate_password_hash
 

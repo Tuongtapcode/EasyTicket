@@ -8,8 +8,9 @@ from app.dao.event_dao import get_event_by_id
 from app.dao.ticket_dao import get_ticket_type_by_event_id, count_sold_by_ticket_type
 from app.dao.ticket_type_dao import get_ticket_types_by_event
 from app.forms import EventForm, TicketTypeForm
-from app import db, TicketType, dao
+from app.models import db, TicketType
 from app.models import Event
+from app import dao
 
 events_bp = Blueprint("event", __name__, url_prefix="/events")
 
