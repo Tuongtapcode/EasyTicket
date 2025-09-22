@@ -1,0 +1,37 @@
+{% extends 'admin/master.html' %}
+
+{% block body %}
+<div class="container py-4">
+  <h1 class="mb-4"> Chào mừng Admin đến với hệ thống EasyTicket</h1>
+
+  <div class="row">
+    <div class="col-md-4">
+      <div class="card bg-primary text-white mb-4">
+        <div class="card-body">
+          <h5 class="card-title"> Quản lý người dùng</h5>
+          <p class="card-text">Xem và quản lý danh sách người dùng.</p>
+          <a href="/admin/user" class="btn btn-light">Xem ngay</a>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card bg-success text-white mb-4">
+        <div class="card-body">
+          <h5 class="card-title"> Quản lý sự kiện</h5>
+          <p class="card-text">Xem và chỉnh sửa thông tin sự kiện.</p>
+          <a href="/admin/events" class="btn btn-light">Xem ngay</a>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card bg-info text-white mb-4">
+        <div class="card-body">
+          <h5 class="card-title"> Thống kê hệ thống</h5>
+          <p class="card-text">Xem thống kê bán vé, doanh thu.</p>
+          <a href="/admin/stats" class="btn btn-light">Xem ngay</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
