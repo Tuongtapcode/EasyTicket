@@ -66,7 +66,7 @@
 
           <form class="row g-3" method="get" action="{{ url_for('event.search') }}" id="searchForm">
             <div class="col-md-10">
-              <input type="text" class="form-control form-control-lg" id="searchInput" name="q"
+              <input type="text" class="form-control form-control-lg" id="searchInput" name="q" value="{{ q or '' }}"
                      placeholder="Tìm theo tên / mô tả / địa điểm…">
             </div>
             <div class="col-md-2 d-grid">
@@ -78,11 +78,13 @@
 
           <!--Event Types, có gắn id nên sẽ tạo sự kiện lắng nghe luôn-->
           <div class="mt-4 d-flex chips-wrap" id="eventTypeChips">
-            <button type="button" class="chip active" data-type-id="" aria-pressed="true">Tất cả</button>
-            {% for t in events_type %}
-              <button type="button" class="chip" data-type-id="{{ t.id }}">{{ t.name }}</button>
-            {% endfor %}
-          </div>
+  <button type="button" class="chip {% if not selected_event_type_id %}active{% endif %}" data-type-id="" aria-pressed="{{ 'true' if not selected_event_type_id else 'false' }}">Tất cả</button>
+  {% for t in events_type %}
+    <button type="button"
+            class="chip {% if selected_event_type_id == t.id %}active{% endif %}"
+            data-type-id="{{ t.id }}">{{ t.name }}</button>
+  {% endfor %}
+</div>
         </div>
       </div>
     </div>
@@ -95,8 +97,55 @@
     <div class="row">
       <div class="col-lg-3">
         <div class="filter-sidebar">
-          <h5 class="mb-3"><i class="fas fa-filter me-2"></i>Bộ lọc</h5>
-        </div>
+  <h5 class="mb-3"><i class="fas fa-filter me-2"></i>Bộ lọc</h5>
+  <form method="get" action="{{ url_for('event.search') }}">
+    <!-- giữ lại keyword nếu có -->
+    <input type="hidden" name="q" value="{{ q }}">
+
+    <!-- Category -->
+    <div class="mb-3">
+      <label class="form-label">Danh mục</label>
+      <select class="form-select" name="category_id">
+        <option value="">Tất cả</option>
+        {% for c in categories %}
+          <option value="{{ c.id }}" {% if selected_category_id==c.id %}selected{% endif %}>
+            {{ c.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Khoảng ngày -->
+    <div class="mb-3">
+      <label class="form-label">Từ ngày</label>
+      <input type="date" class="form-control" name="start_date" value="{{ start_date }}">
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Đến ngày</label>
+      <input type="date" class="form-control" name="end_date" value="{{ end_date }}">
+    </div>
+
+    <!-- Địa điểm -->
+    <div class="mb-3">
+      <label class="form-label">Địa điểm</label>
+      <input type="text" class="form-control" name="location" value="{{ location }}">
+    </div>
+
+    <!-- Giá vé -->
+    <div class="mb-3">
+      <label class="form-label">Giá vé</label>
+      <select class="form-select" name="is_free">
+        <option value="" {% if not is_free %}selected{% endif %}>Tất cả</option>
+        <option value="1" {% if is_free=="1" %}selected{% endif %}>Miễn phí</option>
+        <option value="0" {% if is_free=="0" %}selected{% endif %}>Có phí</option>
+      </select>
+    </div>
+
+    <button class="btn btn-primary w-100" type="submit">
+      <i class="fas fa-filter me-1"></i>Áp dụng
+    </button>
+  </form>
+</div>
       </div>
 
       <div class="col-lg-9">
