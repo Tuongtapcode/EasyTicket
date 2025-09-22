@@ -16,9 +16,9 @@ app.secret_key='easyticketnhom11'
 babel = Babel(app)
 
 RAILWAY_USER = os.getenv("DB_USER", "root")
-RAILWAY_PASSWORD = os.getenv("DB_PASSWORD", "KYrheRlKRriAUqwhMBcJFlxlItWEMPMB")
-RAILWAY_HOST = os.getenv("DB_HOST", "shinkansen.proxy.rlwy.net")
-RAILWAY_PORT = int(os.getenv("DB_PORT", 27884))
+RAILWAY_PASSWORD = os.getenv("DB_PASSWORD", "tLZxofCVyJIatBeoVLrEWbJjCCOwqgrg")
+RAILWAY_HOST = os.getenv("DB_HOST", "centerbeam.proxy.rlwy.net")
+RAILWAY_PORT = int(os.getenv("DB_PORT", 46411))
 RAILWAY_DB   = os.getenv("DB_NAME", "railway")
 
 app.config["SQLALCHEMY_DATABASE_URI"] = (
@@ -35,9 +35,9 @@ login_manager = LoginManager(app)
 login_manager.login_view = "auth.login"
 migrate = Migrate(app, db)
 
+from app.admin import CustomAdminIndexView, init_admin
 #Flask_Admin
-admin = Admin(app=app,name="EasyTicket Admin",template_mode="bootstrap4")
-
+admin = Admin(app=app,name="EasyTicket Admin",template_mode="bootstrap4",index_view=CustomAdminIndexView())
 
 #import tất cả models để Alembic detect
 from app.models import (
@@ -45,6 +45,10 @@ from app.models import (
     TicketType, Ticket, Order, OrderDetail,
     Payment
 )
+
+# Đăng ký admin views (sau khi models và Admin đã có)
+init_admin(admin, db.session)
+
 
 from app.blueprints.auth import auth
 from app.blueprints.main import main
