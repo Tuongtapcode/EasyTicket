@@ -34,7 +34,7 @@ def register():
 def login():
     #Nếu đã đăng nhập, chuyển hướng về trang chủ
     if current_user.is_authenticated:
-        return redirect(url_for('index'))
+        return redirect(url_for('main.index'))
 
     form = LoginForm()
     if form.validate_on_submit():
@@ -44,6 +44,8 @@ def login():
             login_user(user, remember=form.remember.data) #remeber để lưu lại người dùng khi bấm nhớ
             next_page = request.args.get('next')
             flash('Login successful!', 'success')
+            if current_user.user_role.value=="ADMIN":
+                return redirect(url_for('admin.index'))
             return redirect(next_page or url_for('main.index'))
         else:
             flash('Login Unsuccessful. Please check username and password', 'danger')
@@ -54,3 +56,8 @@ def login():
 def logout():
     logout_user()#xoa user khoi flask login
     return redirect(url_for('main.index'))
+
+@auth.route("/forbidden")
+def forbidden():
+    return render_template('auth/forbidden.html'),403
+

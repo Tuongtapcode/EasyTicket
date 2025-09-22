@@ -4,8 +4,8 @@ from sqlalchemy import or_
 
 
 # Lay het
-def get_all_events():
-    return Event.query.all()
+def get_all_events(page: int =1, per_page: int = 12):
+    return Event.query.order_by(Event.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
 
 
 # lay theo id

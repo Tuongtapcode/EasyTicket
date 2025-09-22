@@ -10,6 +10,7 @@ from app.dao.ticket_type_dao import get_ticket_types_by_event
 from app.forms import EventForm, TicketTypeForm
 from app import db, TicketType, dao
 from app.models import Event
+from app.services.cloudinary_service import CloudinaryService
 
 events_bp = Blueprint("event", __name__, url_prefix="/events")
 
@@ -57,6 +58,14 @@ def create_event():
     form.set_choices()
 
     if form.validate_on_submit():
+        uploaded_url = None
+        file = form.banner_image.data
+        if file and getattr(file, "filename", ""):
+            cloud_service = CloudinaryService()
+            uploaded_result = cloud_service.upload(file)
+            if uploaded_result:
+                uploaded_url = uploaded_result["url"]
+
         new_event = Event(
             organizer_id=current_user.id,
             name=form.name.data,
@@ -66,7 +75,7 @@ def create_event():
             start_datetime=form.start_datetime.data,
             end_datetime=form.end_datetime.data,
             address=form.address.data,
-            banner_image=form.banner_image.data or None,
+            banner_image=uploaded_url,
             created_at=datetime.now(),
             updated_at=datetime.now()
         )

@@ -49,7 +49,7 @@ def vnp_ipn():
     return jsonify({"RspCode":"00","Message":"Confirm Success"}), 200
 
 
-@vnpay_bp.post("/test/payments/vnpay/create")
+@vnpay_bp.post("/tests/payments/vnpay/create")
 @login_required
 def vnpay_create_test():
     data = request.get_json(force=True)
