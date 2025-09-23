@@ -1,0 +1,620 @@
+{% extends "layout/base.html" %}
+{% block content %}
+
+<style>
+    :root {
+        --primary-color: #667eea;
+        --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --secondary-color: #f093fb;
+        --success-color: #4ecdc4;
+        --warning-color: #ffe66d;
+        --danger-color: #ff6b6b;
+        --light-bg: #f8faff;
+        --card-shadow: 0 10px 40px rgba(102, 126, 234, 0.1);
+        --input-shadow: 0 5px 15px rgba(102, 126, 234, 0.08);
+        --border-radius: 16px;
+        --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    .main-container {
+        background: var(--light-bg);
+        border-radius: var(--border-radius);
+        margin: 2rem;
+        min-height: calc(100vh - 4rem);
+        overflow: hidden;
+        position: relative;
+    }
+
+    .main-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 200px;
+        background: var(--primary-gradient);
+        z-index: 0;
+    }
+
+    .content-wrapper {
+        position: relative;
+        z-index: 1;
+        padding: 2rem;
+    }
+
+    .form-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: var(--border-radius);
+        box-shadow: var(--card-shadow);
+        overflow: hidden;
+        margin-top: 3rem;
+        transition: var(--transition);
+    }
+
+    .form-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 60px rgba(102, 126, 234, 0.15);
+    }
+
+    .card-header {
+        background: var(--primary-gradient);
+        color: white;
+        padding: 2rem;
+        text-align: center;
+        border: none;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .card-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        animation: shimmer 3s ease-in-out infinite;
+    }
+
+    @keyframes shimmer {
+        0%, 100% { transform: rotate(0deg); }
+        50% { transform: rotate(180deg); }
+    }
+
+    .card-header h3 {
+        margin: 0;
+        font-size: 1.8rem;
+        font-weight: 700;
+        position: relative;
+        z-index: 1;
+    }
+
+    .card-header .subtitle {
+        margin-top: 0.5rem;
+        opacity: 0.9;
+        font-size: 1rem;
+        font-weight: 400;
+    }
+
+    .card-body {
+        padding: 3rem 2.5rem;
+        background: white;
+    }
+
+    .form-group {
+        margin-bottom: 2rem;
+        position: relative;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 0.75rem;
+        font-weight: 600;
+        color: #2d3748;
+        font-size: 0.95rem;
+        position: relative;
+    }
+
+    .form-label::after {
+        content: '';
+        position: absolute;
+        bottom: -4px;
+        left: 0;
+        width: 30px;
+        height: 2px;
+        background: var(--primary-gradient);
+        border-radius: 2px;
+    }
+
+    .form-control, .form-select {
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1rem 1.25rem;
+        font-size: 1rem;
+        transition: var(--transition);
+        background: white;
+        width: 100%;
+        position: relative;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: var(--primary-color);
+        box-shadow: var(--input-shadow);
+        outline: none;
+        transform: translateY(-2px);
+    }
+
+    .form-control::placeholder {
+        color: #a0aec0;
+        font-style: italic;
+    }
+
+    textarea.form-control {
+        resize: vertical;
+        min-height: 120px;
+    }
+
+    .input-group {
+        position: relative;
+    }
+
+    .input-icon {
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--primary-color);
+        z-index: 2;
+    }
+
+    .file-input-wrapper {
+        position: relative;
+        overflow: hidden;
+        display: inline-block;
+        width: 100%;
+    }
+
+    .file-input-wrapper input[type=file] {
+        position: absolute;
+        left: -9999px;
+    }
+
+    .file-input-label {
+        display: flex;
+        align-items: center;
+        padding: 1rem 1.25rem;
+        border: 2px dashed #e2e8f0;
+        border-radius: 12px;
+        background: #f7fafc;
+        cursor: pointer;
+        transition: var(--transition);
+        text-align: center;
+        justify-content: center;
+    }
+
+    .file-input-label:hover {
+        border-color: var(--primary-color);
+        background: rgba(102, 126, 234, 0.05);
+    }
+
+    .file-input-label i {
+        margin-right: 0.5rem;
+        color: var(--primary-color);
+    }
+
+    .error-message {
+        color: var(--danger-color);
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+        display: flex;
+        align-items: center;
+        animation: slideIn 0.3s ease-out;
+    }
+
+    .error-message i {
+        margin-right: 0.5rem;
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .form-help {
+        font-size: 0.875rem;
+        color: #718096;
+        margin-top: 0.5rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .form-help i {
+        margin-right: 0.5rem;
+        color: var(--primary-color);
+    }
+
+    .button-group {
+        margin-top: 3rem;
+        text-align: center;
+        padding-top: 2rem;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem 2.5rem;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 1rem;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition: var(--transition);
+        margin: 0 0.5rem;
+        min-width: 140px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        transition: var(--transition);
+    }
+
+    .btn:hover::before {
+        left: 100%;
+    }
+
+    .btn-primary {
+        background: var(--primary-gradient);
+        color: white;
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-success {
+        background: linear-gradient(135deg, var(--success-color) 0%, #26d0ce 100%);
+        color: white;
+        box-shadow: 0 8px 25px rgba(78, 205, 196, 0.3);
+    }
+
+    .btn-success:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 35px rgba(78, 205, 196, 0.4);
+    }
+
+    .btn-secondary {
+        background: #e2e8f0;
+        color: #4a5568;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .btn-secondary:hover {
+        background: #cbd5e0;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    }
+
+    .btn i {
+        margin-right: 0.5rem;
+        font-size: 1.1rem;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .main-container {
+            margin: 1rem;
+            min-height: calc(100vh - 2rem);
+        }
+
+        .content-wrapper {
+            padding: 1rem;
+        }
+
+        .card-body {
+            padding: 2rem 1.5rem;
+        }
+
+        .card-header h3 {
+            font-size: 1.5rem;
+        }
+
+        .btn {
+            width: 100%;
+            margin: 0.25rem 0;
+        }
+
+        .button-group {
+            display: flex;
+            flex-direction: column;
+        }
+    }
+
+    /* Loading Animation */
+    .btn.loading {
+        pointer-events: none;
+        opacity: 0.7;
+    }
+
+    .btn.loading i {
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+
+<div class="main-container">
+    <div class="content-wrapper">
+        <div class="row justify-content-center">
+            <div class="col-lg-10 col-xl-8">
+                <div class="form-card">
+                    <div class="card-header">
+                        <h3>
+                            <i class="fas {{ 'fa-edit' if event else 'fa-calendar-plus' }} me-2"></i>
+                            {{ 'Chỉnh sửa sự kiện' if event else 'Tạo sự kiện mới' }}
+                        </h3>
+                        <div class="subtitle">
+                            {{ 'Cập nhật thông tin sự kiện của bạn' if event else 'Điền thông tin để tạo sự kiện mới' }}
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" enctype="multipart/form-data" id="eventForm">
+                            {{ form.hidden_tag() }}
+
+                            <div class="form-group">
+                                {{ form.name.label(class="form-label") }}
+                                <div class="input-group">
+                                    {{ form.name(class="form-control", placeholder="VD: Hội thảo công nghệ 2024, Concert âm nhạc...") }}
+                                    <i class="fas fa-heading input-icon"></i>
+                                </div>
+                                {% if form.name.errors %}
+                                    <div class="error-message">
+                                        <i class="fas fa-exclamation-circle"></i>
+                                        {% for error in form.name.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-group">
+                                {{ form.description.label(class="form-label") }}
+                                <div class="input-group">
+                                    {{ form.description(class="form-control", rows="5", placeholder="Mô tả chi tiết về sự kiện: nội dung, đối tượng tham gia, lợi ích...") }}
+                                    <i class="fas fa-align-left input-icon"></i>
+                                </div>
+                                {% if form.description.errors %}
+                                    <div class="error-message">
+                                        <i class="fas fa-exclamation-circle"></i>
+                                        {% for error in form.description.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        {{ form.event_type_id.label(class="form-label") }}
+                                        <div class="input-group">
+                                            {{ form.event_type_id(class="form-select") }}
+                                            <i class="fas fa-tags input-icon"></i>
+                                        </div>
+                                        {% if form.event_type_id.errors %}
+                                            <div class="error-message">
+                                                <i class="fas fa-exclamation-circle"></i>
+                                                {% for error in form.event_type_id.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        {{ form.category_id.label(class="form-label") }}
+                                        <div class="input-group">
+                                            {{ form.category_id(class="form-select") }}
+                                            <i class="fas fa-layer-group input-icon"></i>
+                                        </div>
+                                        {% if form.category_id.errors %}
+                                            <div class="error-message">
+                                                <i class="fas fa-exclamation-circle"></i>
+                                                {% for error in form.category_id.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        {{ form.start_datetime.label(class="form-label") }}
+                                        <div class="input-group">
+                                            {{ form.start_datetime(class="form-control", type="datetime-local") }}
+                                            <i class="fas fa-calendar-alt input-icon"></i>
+                                        </div>
+                                        {% if form.start_datetime.errors %}
+                                            <div class="error-message">
+                                                <i class="fas fa-exclamation-circle"></i>
+                                                {% for error in form.start_datetime.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        {{ form.end_datetime.label(class="form-label") }}
+                                        <div class="input-group">
+                                            {{ form.end_datetime(class="form-control", type="datetime-local") }}
+                                            <i class="fas fa-calendar-check input-icon"></i>
+                                        </div>
+                                        {% if form.end_datetime.errors %}
+                                            <div class="error-message">
+                                                <i class="fas fa-exclamation-circle"></i>
+                                                {% for error in form.end_datetime.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                {{ form.address.label(class="form-label") }}
+                                <div class="input-group">
+                                    {{ form.address(class="form-control", placeholder="VD: 123 Nguyễn Văn Cừ, Quận 5, TP.HCM hoặc Link Zoom/Meet") }}
+                                    <i class="fas fa-map-marker-alt input-icon"></i>
+                                </div>
+                                {% if form.address.errors %}
+                                    <div class="error-message">
+                                        <i class="fas fa-exclamation-circle"></i>
+                                        {% for error in form.address.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-group">
+                                {{ form.banner_image.label(class="form-label") }}
+                                <div class="file-input-wrapper">
+                                    {{ form.banner_image(class="form-control", id="bannerInput") }}
+                                    <label for="bannerInput" class="file-input-label">
+                                        <i class="fas fa-cloud-upload-alt"></i>
+                                        <span id="fileName">Chọn ảnh banner cho sự kiện</span>
+                                    </label>
+                                </div>
+                                {% if form.banner_image.errors %}
+                                    <div class="error-message">
+                                        <i class="fas fa-exclamation-circle"></i>
+                                        {% for error in form.banner_image.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <div class="form-help">
+                                    <i class="fas fa-info-circle"></i>
+                                    Định dạng được hỗ trợ: JPG, PNG, GIF (Tối đa 5MB)
+                                </div>
+                            </div>
+
+                            <div class="button-group">
+                                {% if event %}
+                                    <button type="submit" class="btn btn-success" id="submitBtn">
+                                        <i class="fas fa-save"></i>
+                                        Cập nhật sự kiện
+                                    </button>
+                                    <a href="{{ url_for('main.index') }}" class="btn btn-secondary">
+                                        <i class="fas fa-arrow-left"></i>
+                                        Quay lại
+                                    </a>
+                                {% else %}
+                                    <button type="submit" class="btn btn-primary" id="submitBtn">
+                                        <i class="fas fa-plus"></i>
+                                        Tạo sự kiện
+                                    </button>
+                                    <a href="{{ url_for('organizer.dashboard') }}" class="btn btn-secondary">
+                                        <i class="fas fa-arrow-left"></i>
+                                        Quay lại
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // File input handler
+    const fileInput = document.getElementById('bannerInput');
+    const fileName = document.getElementById('fileName');
+
+    fileInput.addEventListener('change', function(e) {
+        if (e.target.files.length > 0) {
+            fileName.textContent = e.target.files[0].name;
+        } else {
+            fileName.textContent = 'Chọn ảnh banner cho sự kiện';
+        }
+    });
+
+    // Form submission handler
+    const form = document.getElementById('eventForm');
+    const submitBtn = document.getElementById('submitBtn');
+
+    form.addEventListener('submit', function() {
+        submitBtn.classList.add('loading');
+        submitBtn.innerHTML = '<i class="fas fa-spinner"></i> Đang xử lý...';
+    });
+
+    // Auto-resize textarea
+    const textarea = document.querySelector('textarea');
+    if (textarea) {
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+    }
+
+    // Validate datetime
+    const startDate = document.querySelector('input[name="start_datetime"]');
+    const endDate = document.querySelector('input[name="end_datetime"]');
+
+    if (startDate && endDate) {
+        startDate.addEventListener('change', function() {
+            endDate.min = this.value;
+        });
+
+        endDate.addEventListener('change', function() {
+            if (this.value && startDate.value && this.value <= startDate.value) {
+                this.setCustomValidity('Thời gian kết thúc phải sau thời gian bắt đầu');
+            } else {
+                this.setCustomValidity('');
+            }
+        });
+    }
+});
+</script>
+
+{% endblock %}

@@ -1,7 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum as PyEnum
-
 from flask_login import UserMixin
 from sqlalchemy import (
     Column, Integer, String, Boolean, Enum, DateTime, ForeignKey, DECIMAL, Numeric, Index
@@ -40,8 +39,10 @@ class PaymentStatus(PyEnum):
 
 
 class PaymentMethod(PyEnum):
-    VN_PAY="VN_PAY"
-    MOMO="MOMO"
+    CREDIT_CARD   = "CREDIT_CARD"
+    DEBIT_CARD    = "DEBIT_CARD"
+    BANK_TRANSFER = "BANK_TRANSFER"
+    DIGITAL_WALLET= "DIGITAL_WALLET"
 
 
 # ===== Models =====
@@ -73,6 +74,8 @@ class User(db.Model, UserMixin):
     def __repr__(self):
         return f"<User id={self.id} username={self.username!r}>"
 
+    def __str__(self):
+        return f"{self.first_name} {self.last_name}"
 
 class Category(db.Model):
     __tablename__ = "category"
@@ -88,6 +91,8 @@ class Category(db.Model):
     def __repr__(self):
         return f"<Category id={self.id} name={self.name!r}>"
 
+    def __str__(self):
+        return self.name
 
 class EventType(db.Model):
     __tablename__ = "event_type"
@@ -102,6 +107,8 @@ class EventType(db.Model):
     def __repr__(self):
         return f"<EventType id={self.id} name={self.name!r}>"
 
+    def __str__(self):
+        return self.name
 
 class Event(db.Model):
     __tablename__ = "event"
@@ -150,6 +157,7 @@ class TicketType(db.Model):
     description = Column(String(200), nullable=False)
     quantity = Column(Integer, nullable=False)
     active = Column(Boolean, default=True)
+    price = Column(Numeric(10, 2), nullable=False)
 
     created_at = Column(DateTime, default=datetime.now)
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
@@ -177,6 +185,10 @@ class Ticket(db.Model):
     # khi vé chưa sử dụng, nên để NULL
     use_at = Column(DateTime, nullable=True)
 
+    # NEW: chuỗi QR đã ký + thời điểm phát hành
+    qr_data = Column(String(256), unique=True, nullable=True, index=True)
+    issued_at = Column(DateTime, nullable=True)
+
     created_at = Column(DateTime, default=datetime.now)
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
 
@@ -199,7 +211,8 @@ class Order(db.Model):
     total_amount = Column(DECIMAL(10, 2), nullable=False, default=Decimal("0.00"))
     extra_fee = Column(DECIMAL(10, 2), nullable=False, default=Decimal("0.00"))
     discount = Column(DECIMAL(10, 2), nullable=False, default=Decimal("0.00"))
-
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
     # relationships
     customer = relationship("User", back_populates="orders")
     tickets = relationship("Ticket", back_populates="order")
@@ -250,3 +263,4 @@ class Payment(db.Model):
 
     def __repr__(self):
         return f"<Payment id={self.id} order_id={self.order_id} status={self.status.value}>"
+

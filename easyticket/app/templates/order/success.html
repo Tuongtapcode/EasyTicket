@@ -1,0 +1,28 @@
+{% extends "layout/base.html" %}
+{% block content %}
+<section class="py-4">
+  <div class="container">
+    <div class="alert alert-success">
+      <i class="fas fa-check-circle me-2"></i>Thanh toán thành công! Vé của bạn:
+    </div>
+
+    <div class="row g-3">
+      {% for t in tickets %}
+      <div class="col-md-4">
+        <div class="card h-100">
+          <div class="card-body">
+            <div class="small text-muted">Mã vé</div>
+            <div class="h5">{{ t.ticket_code }}</div>
+            <div class="small">Trạng thái: <strong>{{ t.status.name }}</strong></div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <a href="{{ url_for('main.index') }}" class="btn btn-primary mt-3">
+      Về trang chủ
+    </a>
+  </div>
+</section>
+{% endblock %}

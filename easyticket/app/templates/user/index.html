@@ -1,583 +1,360 @@
 {% extends 'layout/base.html' %}
 {% block content %}
-  <!-- Header -->
 
+<style>
+  /* --- Search hero --- */
+  .search-hero {
+    background: linear-gradient(135deg,#7140ff 0%, #9a54ff 45%, #22c1c3 100%);
+    padding: 48px 0 64px;
+  }
+  .search-card {
+    background: rgba(255,255,255,.92);
+    box-shadow: 0 12px 30px rgba(23,26,31,.12);
+    border: 0; border-radius: 20px;
+  }
+  .search-card .form-control-lg { padding: .9rem 1.1rem; }
 
-    <!-- Search Section -->
-    <section class="search-section">
-        <div class="container">
-            <div class="row justify-content-center">
-                <div class="col-lg-10">
-                    <div class="category-filter">
-                        <h2 class="h4 text-center mb-4">
-                            <i class="fas fa-search me-2"></i>Tìm kiếm sự kiện yêu thích
-                        </h2>
-                        <div class="row g-3">
-                            <div class="col-md-4">
-                                <input type="text"
-                                       class="form-control form-control-lg"
-                                       id="searchInput"
-                                       placeholder="Tìm theo tên sự kiện...">
-                            </div>
-                            <div class="col-md-3">
-                                <select class="form-select form-select-lg" id="statusFilter">
-                                    <option value="">Tất cả trạng thái</option>
-                                    <option value="PUBLISHED">Đã xuất bản</option>
-                                    <option value="DRAFT">Bản nháp</option>
-                                    <option value="CANCELLED">Đã hủy</option>
-                                    <option value="COMPLETED">Đã hoàn thành</option>
-                                </select>
-                            </div>
-                            <div class="col-md-3">
-                                <select class="form-select form-select-lg" id="categoryFilter">
-                                    <option value="">Tất cả danh mục</option>
-                                    <option value="music">Âm nhạc</option>
-                                    <option value="tech">Công nghệ</option>
-                                    <option value="art">Nghệ thuật</option>
-                                    <option value="sports">Thể thao</option>
-                                    <option value="food">Ẩm thực</option>
-                                </select>
-                            </div>
-                            <div class="col-md-2">
-                                <button class="btn btn-primary-custom w-100 text-white" onclick="searchEvents()">
-                                    <i class="fas fa-search me-2"></i>Tìm kiếm
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+  /* --- Chips (event types) --- */
+  .chips-wrap {
+    gap: .5rem; flex-wrap: wrap; overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .chips-wrap::-webkit-scrollbar { display:none; }
+  .chip {
+    border-radius: 999px; padding: .35rem .9rem; font-weight: 600;
+    border: 1px solid #cfd7ff; color: #3b4cca; background: #f6f8ff;
+    transition: all .15s ease;
+    white-space: nowrap;
+  }
+  .chip:hover { background: #edf2ff; }
+  .chip.active { background: #3b4cca; color: #fff; border-color: #3b4cca; }
+
+  /* --- Cards --- */
+  .card-hover { transition: transform .15s ease, box-shadow .15s ease; }
+  .card-hover:hover { transform: translateY(-4px); box-shadow: 0 10px 24px rgba(18,18,18,.12); }
+
+   /* Ảnh banner thay cho nền màu */
+  .thumb-wrap { position: relative; }
+  .event-thumb {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 12px 12px 0 0;
+    background: #eef2f7; /* phòng khi link ảnh lỗi */
+  }
+  .status-badge { position:absolute; top:10px; right:10px; z-index: 2; }
+
+  .event-banner {
+    height: 180px; border-radius: 12px 12px 0 0;
+    background: linear-gradient(135deg,#7f6dff 0%, #6ad8ff 100%);
+    display:flex; align-items:center; justify-content:center;
+    color:#fff; font-size:44px;
+  }
+  .status-badge {
+    position:absolute; top:10px; right:10px;
+  }
+</style>
+
+<section class="search-hero">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-10">
+        <div class="card search-card p-4 p-md-5">
+          <h2 class="h4 text-center mb-4">
+            <i class="fas fa-search me-2"></i>Tìm kiếm sự kiện yêu thích
+          </h2>
+
+          <form class="row g-3" method="get" action="{{ url_for('event.search') }}" id="searchForm">
+            <div class="col-md-10">
+              <input type="text" class="form-control form-control-lg" id="searchInput" name="q" value="{{ q or '' }}"
+                     placeholder="Tìm theo tên / mô tả / địa điểm…">
             </div>
-        </div>
-    </section>
-
-    <!-- Filter and Events Section -->
-    <section class="py-5">
-        <div class="container">
-            <div class="row">
-                <!-- Filter Sidebar -->
-                <div class="col-lg-3">
-                    <div class="filter-sidebar">
-                        <h5 class="mb-3">
-                            <i class="fas fa-filter me-2"></i>Bộ lọc
-                        </h5>
-
-                        <!-- Date Filter -->
-                        <div class="mb-4">
-                            <h6>Thời gian</h6>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="dateFilter" id="today" value="today">
-                                <label class="form-check-label" for="today">Hôm nay</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="dateFilter" id="tomorrow" value="tomorrow">
-                                <label class="form-check-label" for="tomorrow">Ngày mai</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="dateFilter" id="weekend" value="weekend">
-                                <label class="form-check-label" for="weekend">Cuối tuần</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="dateFilter" id="nextweek" value="nextweek">
-                                <label class="form-check-label" for="nextweek">Tuần tới</label>
-                            </div>
-                        </div>
-
-                        <!-- Price Filter -->
-                        <div class="mb-4">
-                            <h6>Khoảng giá</h6>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="free" value="free">
-                                <label class="form-check-label" for="free">Miễn phí</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="under500k" value="under500k">
-                                <label class="form-check-label" for="under500k">Dưới 500k</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="500k-1m" value="500k-1m">
-                                <label class="form-check-label" for="500k-1m">500k - 1M</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="over1m" value="over1m">
-                                <label class="form-check-label" for="over1m">Trên 1M</label>
-                            </div>
-                        </div>
-
-                        <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">
-                            <i class="fas fa-times me-2"></i>Xóa bộ lọc
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Events Grid -->
-                <div class="col-lg-9">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h3>Danh sách sự kiện</h3>
-                        <div class="d-flex align-items-center">
-                            <span class="me-3 text-muted">Sắp xếp:</span>
-                            <select class="form-select" id="sortSelect" style="width: auto;">
-                                <option value="newest">Mới nhất</option>
-                                <option value="oldest">Cũ nhất</option>
-                                <option value="price-low">Giá thấp đến cao</option>
-                                <option value="price-high">Giá cao đến thấp</option>
-                                <option value="name">Tên A-Z</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div id="eventsGrid" class="row g-4">
-                        <!-- Events will be populated here -->
-                    </div>
-
-                    <!-- No Results -->
-                    <div id="noResults" class="no-events d-none">
-                        <i class="fas fa-calendar-times fa-4x mb-3"></i>
-                        <h4>Không tìm thấy sự kiện nào</h4>
-                        <p>Hãy thử thay đổi tiêu chí tìm kiếm hoặc bộ lọc</p>
-                    </div>
-
-                    <!-- Pagination -->
-                    <nav aria-label="Page navigation" class="mt-5">
-                        <ul class="pagination justify-content-center">
-                            <li class="page-item disabled">
-                                <a class="page-link" href="#" tabindex="-1">Trước</a>
-                            </li>
-                            <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                            <li class="page-item"><a class="page-link" href="#">2</a></li>
-                            <li class="page-item"><a class="page-link" href="#">3</a></li>
-                            <li class="page-item">
-                                <a class="page-link" href="#">Sau</a>
-                            </li>
-                        </ul>
-                    </nav>
-                </div>
+            <div class="col-md-2 d-grid">
+              <button class="btn btn-primary w-100" type="submit">
+                <i class="fas fa-search me-2"></i>Tìm kiếm
+              </button>
             </div>
+          </form>
+
+          <!--Event Types, có gắn id nên sẽ tạo sự kiện lắng nghe luôn-->
+          <div class="mt-4 d-flex chips-wrap" id="eventTypeChips">
+  <button type="button" class="chip {% if not selected_event_type_id %}active{% endif %}" data-type-id="" aria-pressed="{{ 'true' if not selected_event_type_id else 'false' }}">Tất cả</button>
+  {% for t in events_type %}
+    <button type="button"
+            class="chip {% if selected_event_type_id == t.id %}active{% endif %}"
+            data-type-id="{{ t.id }}">{{ t.name }}</button>
+  {% endfor %}
+</div>
         </div>
-    </section>
+      </div>
+    </div>
+  </div>
+</section>
 
-    <!-- Event Detail Modal -->
-    <div class="modal fade" id="eventModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header border-0">
-                    <h5 class="modal-title" id="modalTitle"></h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div id="modalBanner" class="event-banner rounded mb-4">
-                        <i class="fas fa-calendar-alt"></i>
-                    </div>
+<!-- =========== Content =========== -->
+<section class="py-5">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-3">
+        <div class="filter-sidebar">
+  <h5 class="mb-3"><i class="fas fa-filter me-2"></i>Bộ lọc</h5>
+  <form method="get" action="{{ url_for('event.search') }}">
+    <!-- giữ lại keyword nếu có -->
+    <input type="hidden" name="q" value="{{ q }}">
 
-                    <div class="row">
-                        <div class="col-md-8">
-                            <h6><i class="fas fa-align-left me-2"></i>Mô tả sự kiện</h6>
-                            <p id="modalDescription" class="mb-4"></p>
-
-                            <h6><i class="fas fa-map-marker-alt me-2"></i>Địa điểm</h6>
-                            <p id="modalAddress" class="mb-4"></p>
-                        </div>
-                        <div class="col-md-4">
-                            <h6><i class="fas fa-clock me-2"></i>Thời gian</h6>
-                            <p><strong>Bắt đầu:</strong><br><span id="modalStartTime"></span></p>
-                            <p><strong>Kết thúc:</strong><br><span id="modalEndTime"></span></p>
-                        </div>
-                    </div>
-
-                    <h6><i class="fas fa-ticket-alt me-2"></i>Loại vé có sẵn</h6>
-                    <div id="ticketTypes">
-                        <!-- Ticket types will be populated here -->
-                    </div>
-                </div>
-                <div class="modal-footer border-0">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                    <button type="button" class="btn btn-success" onclick="buyTicket()">
-                        <i class="fas fa-shopping-cart me-2"></i>Mua vé ngay
-                    </button>
-                    <button type="button" class="btn btn-outline-primary" onclick="shareEvent()">
-                        <i class="fas fa-share me-2"></i>Chia sẻ
-                    </button>
-                </div>
-            </div>
-        </div>
+    <!-- Category -->
+    <div class="mb-3">
+      <label class="form-label">Danh mục</label>
+      <select class="form-select" name="category_id">
+        <option value="">Tất cả</option>
+        {% for c in categories %}
+          <option value="{{ c.id }}" {% if selected_category_id==c.id %}selected{% endif %}>
+            {{ c.name }}
+          </option>
+        {% endfor %}
+      </select>
     </div>
 
+    <!-- Khoảng ngày -->
+    <div class="mb-3">
+      <label class="form-label">Từ ngày</label>
+      <input type="date" class="form-control" name="start_date" value="{{ start_date }}">
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Đến ngày</label>
+      <input type="date" class="form-control" name="end_date" value="{{ end_date }}">
+    </div>
+
+    <!-- Địa điểm -->
+    <div class="mb-3">
+      <label class="form-label">Địa điểm</label>
+      <input type="text" class="form-control" name="location" value="{{ location }}">
+    </div>
+
+    <!-- Giá vé -->
+    <div class="mb-3">
+      <label class="form-label">Giá vé</label>
+      <select class="form-select" name="is_free">
+        <option value="" {% if not is_free %}selected{% endif %}>Tất cả</option>
+        <option value="1" {% if is_free=="1" %}selected{% endif %}>Miễn phí</option>
+        <option value="0" {% if is_free=="0" %}selected{% endif %}>Có phí</option>
+      </select>
+    </div>
+
+    <button class="btn btn-primary w-100" type="submit">
+      <i class="fas fa-filter me-1"></i>Áp dụng
+    </button>
+  </form>
+</div>
+      </div>
+
+      <div class="col-lg-9">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h3 class="mb-0">Danh sách sự kiện</h3>
+          <div class="d-flex align-items-center">
+            <span class="me-3 text-muted">Sắp xếp:</span>
+            <select class="form-select" id="sortSelect" style="width:auto;">
+              <option value="newest">Mới nhất</option>
+              <option value="oldest">Cũ nhất</option>
+              <option value="price-low">Giá thấp đến cao</option>
+              <option value="price-high">Giá cao đến thấp</option>
+              <option value="name">Tên A-Z</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="eventsGrid" class="row g-4"></div>
+
+        <div id="noResults" class="no-events d-none text-center py-5">
+          <i class="fas fa-calendar-times fa-4x mb-3 text-muted"></i>
+          <h4>Không tìm thấy sự kiện nào</h4>
+          <p class="text-muted">Hãy thử thay đổi tiêu chí tìm kiếm hoặc bộ lọc</p>
+        </div>
+
+          {% if events.pages > 1 %}
+          <nav aria-label="Page navigation">
+  <ul class="pagination justify-content-center mt-5">
+    <li class="page-item {% if not events.has_prev %}disabled{% endif %}">
+      <a class="page-link" href="{{ url_for('main.index', page=events.prev_num) }}" aria-label="Previous">
+        <span aria-hidden="true">&laquo;</span>
+      </a>
+    </li>
+
+    {% for p in events.iter_pages() %}
+      {% if p %}
+        {% if p == events.page %}
+          <li class="page-item active"><a class="page-link" href="#">{{ p }}</a></li>
+        {% else %}
+          <li class="page-item"><a class="page-link" href="{{ url_for('main.index', page=p) }}">{{ p }}</a></li>
+        {% endif %}
+      {% else %}
+        <li class="page-item disabled"><a class="page-link" href="#">...</a></li>
+      {% endif %}
+    {% endfor %}
+
+    <li class="page-item {% if not events.has_next %}disabled{% endif %}">
+      <a class="page-link" href="{{ url_for('main.index', page=events.next_num) }}" aria-label="Next">
+        <span aria-hidden="true">&raquo;</span>
+      </a>
+    </li>
+  </ul>
+</nav>
+{% endif %}
+
+      </div>
+    </div>
+  </div>
+</section>
+
 <script>
-        // Sample events data based on the database schema
-        const events = [
-            {
-                id: 1,
-                name: "Lễ hội âm nhạc mùa hè 2024",
-                description: "Một đêm nhạc tuyệt vời với những nghệ sĩ hàng đầu Việt Nam. Cùng nhau tận hưởng những giai điệu sôi động và không khí lễ hội sôi nổi.",
-                status: "PUBLISHED",
-                start_datetime: "2024-07-15T19:00:00",
-                end_datetime: "2024-07-15T23:00:00",
-                address: "Công viên Thống Nhất, Hà Nội",
-                category: "music",
-                organizer: "BTC Lễ hội âm nhạc",
-                created_at: "2024-01-15T10:00:00",
-                ticketTypes: [
-                    { name: "Vé thường", price: "500,000", description: "Khu vực đứng", quantity: 1000 },
-                    { name: "Vé VIP", price: "1,200,000", description: "Khu vực ngồi gần sân khấu", quantity: 200 }
-                ]
-            },
-            {
-                id: 2,
-                name: "Hội thảo Công nghệ AI 2024",
-                description: "Khám phá những xu hướng mới nhất trong lĩnh vực trí tuệ nhân tạo cùng các chuyên gia hàng đầu trong ngành.",
-                status: "PUBLISHED",
-                start_datetime: "2024-06-20T09:00:00",
-                end_datetime: "2024-06-20T17:00:00",
-                address: "Trung tâm Hội nghị Quốc gia, TP.HCM",
-                category: "tech",
-                organizer: "Vietnam AI Association",
-                created_at: "2024-01-10T08:00:00",
-                ticketTypes: [
-                    { name: "Vé sinh viên", price: "200,000", description: "Dành cho sinh viên có thẻ", quantity: 300 },
-                    { name: "Vé thường", price: "800,000", description: "Bao gồm tài liệu và coffee break", quantity: 500 }
-                ]
-            },
-            {
-                id: 3,
-                name: "Triển lãm Nghệ thuật Đương đại",
-                description: "Trưng bày những tác phẩm nghệ thuật đương đại độc đáo từ các nghệ sĩ trẻ tài năng trong và ngoài nước.",
-                status: "PUBLISHED",
-                start_datetime: "2024-08-01T10:00:00",
-                end_datetime: "2024-08-31T18:00:00",
-                address: "Bảo tàng Mỹ thuật, Hà Nội",
-                category: "art",
-                organizer: "Bảo tàng Mỹ thuật Việt Nam",
-                created_at: "2024-02-01T12:00:00",
-                ticketTypes: [
-                    { name: "Vé người lớn", price: "150,000", description: "Vé tham quan cả tháng", quantity: 0 },
-                    { name: "Vé trẻ em", price: "75,000", description: "Dành cho trẻ em dưới 12 tuổi", quantity: 0 }
-                ]
-            },
-            {
-                id: 4,
-                name: "Workshop Nấu ăn Ý",
-                description: "Học cách làm pasta và pizza authentic từ đầu bếp người Ý chính hiệu.",
-                status: "DRAFT",
-                start_datetime: "2024-09-10T14:00:00",
-                end_datetime: "2024-09-10T17:00:00",
-                address: "Nhà hàng Bella Italia, Quận 1, TP.HCM",
-                category: "food",
-                organizer: "Bella Italia Restaurant",
-                created_at: "2024-02-10T11:30:00",
-                ticketTypes: [
-                    { name: "Vé tham gia", price: "1,500,000", description: "Bao gồm nguyên liệu và bữa ăn", quantity: 20 }
-                ]
-            },
-            {
-                id: 5,
-                name: "Chạy bộ Marathon Hà Nội",
-                description: "Sự kiện chạy bộ lớn nhất năm với các cự ly 5km, 10km, 21km và 42km.",
-                status: "PUBLISHED",
-                start_datetime: "2024-10-15T06:00:00",
-                end_datetime: "2024-10-15T12:00:00",
-                address: "Hồ Gươm, Hà Nội",
-                category: "sports",
-                organizer: "Hanoi Running Club",
-                created_at: "2024-01-05T07:00:00",
-                ticketTypes: [
-                    { name: "5km", price: "300,000", description: "Bao gồm áo, số bib và huy chương", quantity: 500 },
-                    { name: "21km", price: "500,000", description: "Bao gồm áo, số bib và huy chương", quantity: 300 },
-                    { name: "42km", price: "800,000", description: "Bao gồm áo, số bib và huy chương", quantity: 200 }
-                ]
-            },
-            {
-                id: 6,
-                name: "Lễ hội Bia Craft Việt Nam",
-                description: "Thưởng thức những loại bia thủ công tuyệt hảo từ các nhà sản xuất địa phương.",
-                status: "CANCELLED",
-                start_datetime: "2024-05-25T17:00:00",
-                end_datetime: "2024-05-26T22:00:00",
-                address: "Công viên Tao Đàn, TP.HCM",
-                category: "food",
-                organizer: "Vietnam Craft Beer Association",
-                created_at: "2024-01-20T15:00:00",
-                ticketTypes: [
-                    { name: "Vé 1 ngày", price: "400,000", description: "Bao gồm 3 ly bia và đồ ăn nhẹ", quantity: 0 },
-                    { name: "Vé 2 ngày", price: "700,000", description: "Bao gồm 6 ly bia và đồ ăn", quantity: 0 }
-                ]
-            }
-        ];
+  // ====== DỮ LIỆU SỰ KIỆN ======
+  const events = [
+    {% for e in events.items %}
+    {
+      id: {{ e.id|tojson }},
+      name: {{ (e.name or '')|tojson }},
+      description: {{ (e.description or '')|tojson }},
+      status: {{ ((e.status.name) if e.status else 'PUBLISHED')|tojson }},
+      start_datetime: {{ (e.start_datetime.isoformat() if e.start_datetime else '')|tojson }},
+      end_datetime: {{ (e.end_datetime.isoformat() if e.end_datetime else '')|tojson }},
+      address: {{ (e.address or '')|tojson }},
+      category: {{ ((e.category.name) if e.category is not none and e.category is not string else (e.category or ''))|tojson }},
+      organizer: {{ (((e.organizer.first_name ~ ' ' ~ e.organizer.last_name).strip()) if e.organizer else '')|tojson }},
+      created_at: {{ (e.created_at.isoformat() if e.created_at else '')|tojson }},
+      event_type_id: {{ e.event_type_id|tojson }},
+      event_type_name: {{ (e.event_type.name if e.event_type else '')|tojson }},
+      banner_image: {{ (e.banner_image or '')|tojson }},
+      ticketTypes: [
+        {% for t in (e.ticket_types or []) %}
+        { name: {{ (t.name or 'Vé thường')|tojson }}, price: {{ (t.price|string)|tojson }}, description: {{ (t.description or '')|tojson }}, quantity: {{ (t.quantity or 0)|int }} }
+        {% if not loop.last %},{% endif %}
+        {% endfor %}
+      ]
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ];
 
-        let filteredEvents = [...events];
-        let currentEvent = null;
+  let filteredEvents = [...events];
 
-        // Format date function
-        function formatDate(dateString) {
-            const date = new Date(dateString);
-            return date.toLocaleDateString('vi-VN', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-        }
+  function formatDate(s) {
+    const d = new Date(s);
+    return d.toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+  function getStatusBadge(status) {
+    const map = {
+      PUBLISHED: '<span class="badge bg-success status-badge">Đã xuất bản</span>',
+      DRAFT:     '<span class="badge bg-warning status-badge">Bản nháp</span>',
+      CANCELLED: '<span class="badge bg-danger status-badge">Đã hủy</span>',
+      COMPLETED: '<span class="badge bg-secondary status-badge">Đã hoàn thành</span>'
+    };
+    return map[status] || '';
+  }
+  function formatPrice(p) { return (parseInt(p)||0).toLocaleString('vi-VN') + ' VNĐ'; }
+  function getMinPrice(tt) {
+    const prices = tt.map(t=>parseInt(t.price)).filter(p=>p>0);
+    return prices.length ? Math.min(...prices) : 0;
+  }
+  function hasAvailableTickets(tt){ return tt.some(t=>t.quantity>0); }
 
-        // Get status badge
-        function getStatusBadge(status) {
-            const badges = {
-                'PUBLISHED': '<span class="badge bg-success position-absolute status-badge">Đã xuất bản</span>',
-                'DRAFT': '<span class="badge bg-warning position-absolute status-badge">Bản nháp</span>',
-                'CANCELLED': '<span class="badge bg-danger position-absolute status-badge">Đã hủy</span>',
-                'COMPLETED': '<span class="badge bg-secondary position-absolute status-badge">Đã hoàn thành</span>'
-            };
-            return badges[status] || '';
-        }
+  // Fallback ảnh theo loại
+function fallbackByType(typeName='') {
+  const t = (typeName || '').toLowerCase();
+  if (t.includes('webinar') || t.includes('trực tuyến')) return 'https://source.unsplash.com/1600x900/?webinar,online';
+  if (t.includes('âm nhạc') || t.includes('concert'))   return 'https://source.unsplash.com/1600x900/?music,concert';
+  if (t.includes('thể thao'))                            return 'https://source.unsplash.com/1600x900/?sport,stadium';
+  if (t.includes('triển lãm') || t.includes('nghệ thuật')) return 'https://source.unsplash.com/1600x900/?art,exhibition';
+  if (t.includes('hội thảo') || t.includes('workshop'))  return 'https://source.unsplash.com/1600x900/?workshop,people';
+  if (t.includes('hội nghị'))                            return 'https://source.unsplash.com/1600x900/?conference,audience';
+  if (t.includes('kết nối') || t.includes('network'))    return 'https://source.unsplash.com/1600x900/?networking,business';
+  return 'https://source.unsplash.com/1600x900/?event,conference';
+}
 
-        // Get category icon
-        function getCategoryIcon(category) {
-            const icons = {
-                'music': 'fas fa-music',
-                'tech': 'fas fa-laptop-code',
-                'art': 'fas fa-palette',
-                'sports': 'fas fa-running',
-                'food': 'fas fa-utensils'
-            };
-            return icons[category] || 'fas fa-calendar';
-        }
+function renderEvents(list = filteredEvents) {
+  const grid = document.getElementById('eventsGrid');
+  const noRes = document.getElementById('noResults');
+  if (!list.length) { grid.innerHTML = ''; noRes.classList.remove('d-none'); return; }
+  noRes.classList.add('d-none');
 
-        // Format price
-        function formatPrice(price) {
-            return parseInt(price).toLocaleString('vi-VN') + ' VNĐ';
-        }
+  grid.innerHTML = list.map(ev => {
+    const thumb = ev.banner_image && ev.banner_image.trim() ? ev.banner_image : fallbackByType(ev.event_type_name);
+    return `
+      <div class="col-lg-4 col-md-6">
+        <div class="card card-hover position-relative h-100" onclick="openEventDetail(${ev.id})" style="cursor:pointer;">
+          ${getStatusBadge(ev.status)}
+          <div class="thumb-wrap">
+            <img class="event-thumb" src="${thumb}" alt="${ev.name || 'Event'}" loading="lazy"
+                 onerror="this.onerror=null;this.src='${fallbackByType(ev.event_type_name)}';" />
+          </div>
+          <div class="card-body">
+            <div class="small text-muted mb-1"><i class="fas fa-layer-group me-1"></i>${ev.event_type_name || '—'}</div>
+            <h5 class="card-title">${ev.name}</h5>
+            <p class="text-muted mb-2">${(ev.description||'').substring(0, 80)}...</p>
 
-        // Get minimum price for event
-        function getMinPrice(ticketTypes) {
-            const prices = ticketTypes.map(t => parseInt(t.price)).filter(p => p > 0);
-            return prices.length > 0 ? Math.min(...prices) : 0;
-        }
+            <div class="mb-1"><i class="fas fa-calendar-alt me-1"></i><small>${formatDate(ev.start_datetime)}</small></div>
+            <div class="mb-2"><i class="fas fa-location-dot me-1"></i><small>${ev.address}</small></div>
 
-        // Check if event has available tickets
-        function hasAvailableTickets(ticketTypes) {
-            return ticketTypes.some(t => t.quantity > 0);
-        }
+            <div class="d-flex justify-content-between align-items-center">
+              <div>${getMinPrice(ev.ticketTypes) > 0
+                ? `<span class="badge text-bg-light">Từ ${formatPrice(getMinPrice(ev.ticketTypes))}</span>`
+                : `<span class="badge text-bg-success">Miễn phí</span>`}
+              </div>
+              <div>${hasAvailableTickets(ev.ticketTypes)
+                ? `<span class="badge bg-success">Còn vé</span>`
+                : `<span class="badge bg-danger">Hết vé</span>`}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
 
-        // Render events
-        function renderEvents(eventsToRender = filteredEvents) {
-            const grid = document.getElementById('eventsGrid');
-            const noResults = document.getElementById('noResults');
+  function sortEvents() {
+    const by = document.getElementById('sortSelect').value;
+    filteredEvents.sort((a,b)=>{
+      switch(by){
+        case 'newest':     return new Date(b.created_at) - new Date(a.created_at);
+        case 'oldest':     return new Date(a.created_at) - new Date(b.created_at);
+        case 'price-low':  return getMinPrice(a.ticketTypes) - getMinPrice(b.ticketTypes);
+        case 'price-high': return getMinPrice(b.ticketTypes) - getMinPrice(a.ticketTypes);
+        case 'name':       return a.name.localeCompare(b.name);
+        default:           return 0;
+      }
+    });
+    renderEvents();
+  }
 
-            if (eventsToRender.length === 0) {
-                grid.innerHTML = '';
-                noResults.classList.remove('d-none');
-                return;
-            }
+  function openEventDetail(id){ window.location.href = `/events/${id}`; }
 
-            noResults.classList.add('d-none');
+  // ---- chips behaviour (click → điều hướng sang trang search) ----
+  function goType(typeId) {
+    const base = "{{ url_for('event.search') }}";
+    const url = typeId ? `${base}?event_type_id=${encodeURIComponent(typeId)}` : base;
+    window.location.href = url;
+  }
 
-            grid.innerHTML = eventsToRender.map(event => `
-                <div class="col-lg-4 col-md-6 mb-4">
-                    <div class="card card-hover h-100 position-relative" onclick="openEventDetail(${event.id})" style="cursor: pointer;">
-                        ${getStatusBadge(event.status)}
-                        <div class="event-banner">
-                            <i class="${getCategoryIcon(event.category)}"></i>
-                        </div>
-                        <div class="card-body">
-                            <h5 class="card-title">${event.name}</h5>
-                            <p class="card-text text-muted">${event.description.substring(0, 100)}...</p>
+  document.addEventListener('DOMContentLoaded', () => {
+    // render initial
+    renderEvents();
 
-                            <div class="event-info-item">
-                                <i class="fas fa-calendar-alt"></i>
-                                <small>${formatDate(event.start_datetime)}</small>
-                            </div>
-                            <div class="event-info-item">
-                                <i class="fas fa-map-marker-alt"></i>
-                                <small>${event.address}</small>
-                            </div>
-                            <div class="event-info-item">
-                                <i class="fas fa-user"></i>
-                                <small>Bởi ${event.organizer}</small>
-                            </div>
-                            <div class="event-info-item">
-                                <i class="fas fa-ticket-alt"></i>
-                                <small>${event.ticketTypes.length} loại vé</small>
-                            </div>
+    // search form: trim trước khi submit
+    document.getElementById('searchForm').addEventListener('submit', (e)=>{
+      const inp = document.getElementById('searchInput');
+      inp.value = (inp.value||'').trim();
+    });
 
-                            <div class="d-flex justify-content-between align-items-center mt-3">
-                                <div>
-                                    ${getMinPrice(event.ticketTypes) > 0 ?
-                                        `<span class="price-range">Từ ${formatPrice(getMinPrice(event.ticketTypes).toString())}</span>` :
-                                        `<span class="price-range text-success">Miễn phí</span>`
-                                    }
-                                </div>
-                                <div>
-                                    ${hasAvailableTickets(event.ticketTypes) ?
-                                        `<span class="badge bg-success">Còn vé</span>` :
-                                        `<span class="badge bg-danger">Hết vé</span>`
-                                    }
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card-footer bg-transparent">
-                            <button class="btn btn-primary-custom w-100">
-                                <i class="fas fa-eye me-2"></i>Xem chi tiết
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        }
+    // sort
+    document.getElementById('sortSelect').addEventListener('change', sortEvents);
 
-        // Search and filter events
-        function searchEvents() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const statusFilter = document.getElementById('statusFilter').value;
-            const categoryFilter = document.getElementById('categoryFilter').value;
+    // chips click (đổi trạng thái & redirect)
+    document.getElementById('eventTypeChips').addEventListener('click', (e)=>{
+      const chip = e.target.closest('.chip'); if(!chip) return;
+      document.querySelectorAll('#eventTypeChips .chip').forEach(c=>c.classList.remove('active'));
+      chip.classList.add('active');
+      goType(chip.dataset.typeId || '');
+    });
+  });
+</script>
 
-            filteredEvents = events.filter(event => {
-                const matchesSearch = event.name.toLowerCase().includes(searchTerm) ||
-                                    event.description.toLowerCase().includes(searchTerm) ||
-                                    event.organizer.toLowerCase().includes(searchTerm);
-                const matchesStatus = !statusFilter || event.status === statusFilter;
-                const matchesCategory = !categoryFilter || event.category === categoryFilter;
-
-                return matchesSearch && matchesStatus && matchesCategory;
-            });
-
-            renderEvents(filteredEvents);
-        }
-
-        // Clear all filters
-        function clearFilters() {
-            document.getElementById('searchInput').value = '';
-            document.getElementById('statusFilter').value = '';
-            document.getElementById('categoryFilter').value = '';
-            document.getElementById('sortSelect').value = 'newest';
-
-            // Clear radio buttons and checkboxes
-            document.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach(input => {
-                input.checked = false;
-            });
-
-            filteredEvents = [...events];
-            renderEvents(filteredEvents);
-        }
-
-        // Sort events
-        function sortEvents() {
-            const sortBy = document.getElementById('sortSelect').value;
-
-            filteredEvents.sort((a, b) => {
-                switch(sortBy) {
-                    case 'newest':
-                        return new Date(b.created_at) - new Date(a.created_at);
-                    case 'oldest':
-                        return new Date(a.created_at) - new Date(b.created_at);
-                    case 'price-low':
-                        return getMinPrice(a.ticketTypes) - getMinPrice(b.ticketTypes);
-                    case 'price-high':
-                        return getMinPrice(b.ticketTypes) - getMinPrice(a.ticketTypes);
-                    case 'name':
-                        return a.name.localeCompare(b.name);
-                    default:
-                        return 0;
-                }
-            });
-
-            renderEvents(filteredEvents);
-        }
-
-        // Open event detail modal
-        function openEventDetail(eventId) {
-            currentEvent = events.find(event => event.id === eventId);
-            if (!currentEvent) return;
-
-            document.getElementById('modalTitle').textContent = currentEvent.name;
-            document.getElementById('modalDescription').textContent = currentEvent.description;
-            document.getElementById('modalStartTime').textContent = formatDate(currentEvent.start_datetime);
-            document.getElementById('modalEndTime').textContent = formatDate(currentEvent.end_datetime);
-            document.getElementById('modalAddress').textContent = currentEvent.address;
-
-            // Render ticket types
-            const ticketTypesContainer = document.getElementById('ticketTypes');
-            ticketTypesContainer.innerHTML = currentEvent.ticketTypes.map(ticket => `
-                <div class="ticket-type-card">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div class="flex-grow-1">
-                            <h6 class="mb-1">${ticket.name}</h6>
-                            <p class="text-muted small mb-1">${ticket.description}</p>
-                            <small class="text-info">
-                                ${ticket.quantity > 0 ? `Còn ${ticket.quantity} vé` : 'Hết vé'}
-                            </small>
-                        </div>
-                        <div class="text-end">
-                            <div class="h6 text-primary mb-0">${formatPrice(ticket.price)}</div>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-
-            // Show modal
-            const modal = new bootstrap.Modal(document.getElementById('eventModal'));
-            modal.show();
-        }
-
-        // Buy ticket function
-        function buyTicket() {
-            if (currentEvent.status !== 'PUBLISHED') {
-                alert('Sự kiện này chưa được xuất bản hoặc đã bị hủy!');
-                return;
-            }
-
-            if (!hasAvailableTickets(currentEvent.ticketTypes)) {
-                alert('Rất tiếc, sự kiện này đã hết vé!');
-                return;
-            }
-
-            // Close modal and show success message
-            const modal = bootstrap.Modal.getInstance(document.getElementById('eventModal'));
-            modal.hide();
-
-            alert('Chức năng mua vé sẽ được triển khai trong phiên bản tiếp theo!');
-        }
-
-        // Share event function
-        function shareEvent() {
-            if (navigator.share) {
-                navigator.share({
-                    title: currentEvent.name,
-                    text: currentEvent.description,
-                    url: window.location.href + '#event-' + currentEvent.id
-                });
-            } else {
-                // Fallback for browsers that don't support Web Share API
-                const url = window.location.href + '#event-' + currentEvent.id;
-                navigator.clipboard.writeText(url).then(() => {
-                    alert('Đã sao chép link sự kiện vào clipboard!');
-                });
-            }
-        }
-
-        // Event listeners
-        document.addEventListener('DOMContentLoaded', function() {
-            // Search input
-            document.getElementById('searchInput').addEventListener('input', searchEvents);
-
-            // Filter selects
-            document.getElementById('statusFilter').addEventListener('change', searchEvents);
-            document.getElementById('categoryFilter').addEventListener('change', searchEvents);
-
-            // Sort select
-            document.getElementById('sortSelect').addEventListener('change', sortEvents);
-
-            // Filter checkboxes and radio buttons
-            document.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach(input => {
-                input.addEventListener('change', searchEvents);
-            });
-
-            // Initialize
-            renderEvents();
-        });
-
-        // Add search on Enter key
-        document.getElementById('searchInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                searchEvents();
-            }
-        });
-    </script>
 {% endblock %}
