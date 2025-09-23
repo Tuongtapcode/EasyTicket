@@ -1,6 +1,6 @@
 import pytest
 from types import SimpleNamespace
-from app.dao import ticket_type_dao  # file bạn vừa đưa
+from app.dao import ticket_type_dao
 from app import db
 
 
@@ -12,17 +12,26 @@ def fake_session(monkeypatch):
         def query(self, *args, **kwargs):
             actions["query_called"] = True
             return self
+
         def filter(self, *args):
             actions["filters"] = args
             return self
+
         def order_by(self, *args):
             actions["ordered"] = True
             return self
+
         def all(self):
             return ["t1", "t2"]
-        def delete(self, obj): actions["deleted"] = obj
-        def commit(self): actions["committed"] = True
-        def rollback(self): actions["rollback_called"] = True
+
+        def delete(self, obj):
+            actions["deleted"] = obj
+
+        def commit(self):
+            actions["committed"] = True
+
+        def rollback(self):
+            actions["rollback_called"] = True
 
     monkeypatch.setattr(ticket_type_dao, "db", SimpleNamespace(session=FakeSession()))
     return actions
@@ -47,8 +56,15 @@ def test_get_ticket_type_by_id(monkeypatch):
 # --- get_ticket_types_by_event ---
 def test_get_ticket_types_by_event(fake_session, monkeypatch):
     class FakeTicketType:
-        event_id = "event_id"
-        active = True
+        class _Field:
+            def __init__(self, name):
+                self.name = name
+
+            def __eq__(self, other):
+                return f"{self.name}=={other}"
+
+        event_id = _Field("event_id")
+        active = _Field("active")
         price = SimpleNamespace(asc=lambda: "price_asc")
 
     monkeypatch.setattr(ticket_type_dao, "TicketType", FakeTicketType)
@@ -57,6 +73,7 @@ def test_get_ticket_types_by_event(fake_session, monkeypatch):
     assert result == ["t1", "t2"]
     # kiểm tra đã filter đúng điều kiện event_id và active
     assert any("event_id" in str(f) for f in fake_session["filters"])
+    assert any("active" in str(f) for f in fake_session["filters"])
     assert fake_session["ordered"] is True
 
 
@@ -98,9 +115,14 @@ def test_delete_ticket_type_exception(fake_session, monkeypatch):
             return fake_ticket_type
 
     class FakeSessionWithError:
-        def delete(self, obj): raise Exception("DB Error")
-        def commit(self): pass
-        def rollback(self): fake_session["rollback_called"] = True
+        def delete(self, obj):
+            raise Exception("DB Error")
+
+        def commit(self):
+            pass
+
+        def rollback(self):
+            fake_session["rollback_called"] = True
 
     monkeypatch.setattr(ticket_type_dao, "TicketType", SimpleNamespace(query=FakeQuery()))
     monkeypatch.setattr(ticket_type_dao, "db", SimpleNamespace(session=FakeSessionWithError()))

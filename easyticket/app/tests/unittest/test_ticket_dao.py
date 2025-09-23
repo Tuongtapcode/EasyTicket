@@ -62,6 +62,11 @@ def test_count_sold_by_ticket_type_empty():
 def test_get_tickets_of_user_basic(monkeypatch):
     qry_state = {"filters": [], "ordered": False, "paginated": False}
 
+    class FakeCreatedAt:
+        @staticmethod
+        def desc():  # bắt chước SQLAlchemy column.desc()
+            return "created_at_desc"
+
     class FakeQuery:
         def options(self, *args): return self
         def join(self, *args, **kwargs): return self
@@ -75,10 +80,18 @@ def test_get_tickets_of_user_basic(monkeypatch):
             qry_state["paginated"] = (page, per_page)
             return ["ticket1", "ticket2"]
 
-    FakeTicket = SimpleNamespace(query=FakeQuery())
+    FakeTicket = SimpleNamespace(
+        query=FakeQuery(),
+        event="fake_event",
+        ticket_type="fake_ticket_type",
+        order_id="fake_order_id",
+        created_at=FakeCreatedAt(),
+        status="fake_status"
+    )
+
     monkeypatch.setattr(ticket_dao, "Ticket", FakeTicket)
     monkeypatch.setattr(ticket_dao, "Order", SimpleNamespace(id="order_id", customer_id="customer_id"))
-    monkeypatch.setattr(ticket_dao, "joinedload", lambda x: x)  # tránh lỗi joinedload
+    monkeypatch.setattr(ticket_dao, "joinedload", lambda x: x)
 
     result = ticket_dao.get_tickets_of_user(user_id=123)
     assert result == ["ticket1", "ticket2"]
@@ -90,6 +103,11 @@ def test_get_tickets_of_user_basic(monkeypatch):
 def test_get_tickets_of_user_with_status_and_q(monkeypatch):
     qry_state = {"filters": []}
 
+    class FakeCreatedAt:
+        @staticmethod
+        def desc():
+            return "created_at_desc"
+
     class FakeQuery:
         def options(self, *args): return self
         def join(self, *args, **kwargs): return self
@@ -99,13 +117,29 @@ def test_get_tickets_of_user_with_status_and_q(monkeypatch):
         def order_by(self, *args): return self
         def paginate(self, page, per_page, error_out): return ["t"]
 
-    FakeTicket = SimpleNamespace(query=FakeQuery())
+    FakeTicket = SimpleNamespace(
+        query=FakeQuery(),
+        event="fake_event",
+        ticket_type="fake_ticket_type",
+        order_id="fake_order_id",
+        created_at=FakeCreatedAt(),
+        status="fake_status"
+    )
+
     monkeypatch.setattr(ticket_dao, "Ticket", FakeTicket)
     monkeypatch.setattr(ticket_dao, "Order", SimpleNamespace(id="order_id", customer_id="customer_id"))
     monkeypatch.setattr(ticket_dao, "joinedload", lambda x: x)
 
+    # ✅ FIX: dùng __class_getitem__ để subscript được trên class
     class FakeTicketStatus:
         ACTIVE = "ACTIVE"
+
+        @classmethod
+        def __class_getitem__(cls, key):
+            if key == "ACTIVE":
+                return cls.ACTIVE
+            raise KeyError
+
     monkeypatch.setattr(ticket_dao, "TicketStatus", FakeTicketStatus)
 
     result = ticket_dao.get_tickets_of_user(user_id=1, status="ACTIVE", q="music")
@@ -143,7 +177,6 @@ def test_mark_checked_in(fake_session):
 
     ticket_dao.mark_checked_in(ticket)
 
-    # So sánh theo giá trị enum thật
     assert ticket.status.value == "USED"
     assert isinstance(ticket.use_at, datetime)
     assert ticket in fake_session["added"]

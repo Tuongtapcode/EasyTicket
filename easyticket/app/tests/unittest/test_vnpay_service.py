@@ -21,6 +21,7 @@ def test_createVnpayPayment_success(order_mock, payment_mock):
 
     with patch("app.models.Order.query.get", return_value=order_mock), \
          patch("app.dao.payment_dao.create_payment", return_value=payment_mock), \
+         patch("app.configs.vnpay_configs.VNP_HASHSECRET", "secret"), \
          patch("app.utils.vnpay_utils.hmac_sha512", lambda key, raw: "sig"):
 
         class FakeRequest:
@@ -67,6 +68,7 @@ def test_processReturnUrl_success(order_mock, payment_mock):
     with patch("app.models.Payment.query.get", return_value=payment_mock), \
          patch("app.models.Order.query.get", return_value=order_mock), \
          patch("app.dao.payment_dao.update_payment_status", lambda pid, status, txn: None), \
+         patch("app.configs.vnpay_configs.VNP_HASHSECRET", "secret"), \
          patch("app.utils.vnpay_utils.hmac_sha512", lambda key, raw: "sig"):
 
         res = svc.processReturnUrl(params)
@@ -94,6 +96,7 @@ def test_processReturnUrl_order_payment_mismatch(order_mock, payment_mock):
     payment_mock.amount = 100000
     with patch("app.models.Payment.query.get", return_value=payment_mock), \
          patch("app.models.Order.query.get", return_value=order_mock), \
+         patch("app.configs.vnpay_configs.VNP_HASHSECRET", "secret"), \
          patch("app.utils.vnpay_utils.hmac_sha512", lambda key, raw: "sig"):
 
         res = svc.processReturnUrl(params)
