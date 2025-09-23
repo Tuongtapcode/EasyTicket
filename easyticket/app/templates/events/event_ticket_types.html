@@ -1,1334 +1,1504 @@
 {% extends 'layout/base.html' %}
 {% block content %}
 <style>
-    :root {
-        --primary-color: #667eea;
-        --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        --secondary-color: #f093fb;
-        --accent-color: #4facfe;
-        --success-color: #00d4aa;
-        --warning-color: #feca57;
-        --danger-color: #ff6b9d;
-        --dark-color: #2c3e50;
-        --light-bg: #f8f9fa;
-        --border-color: #e9ecef;
-    }
-
-    .btn-primary-custom {
-        background: var(--primary-gradient);
-        border: none;
-        border-radius: 25px;
-        padding: 0.5rem 1.5rem;
-        font-weight: 500;
-        transition: all 0.3s ease;
-    }
-
-    .btn-primary-custom:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-    }
-
-    .search-section {
-        background: var(--primary-gradient);
-        color: white;
-        padding: 2rem 0;
-    }
-
-    .ticket-card {
-        background: white;
-        border-radius: 15px;
-        padding: 1.5rem;
-        margin-bottom: 1rem;
-        border-left: 4px solid var(--primary-color);
-        transition: all 0.3s ease;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-    }
-
-    .ticket-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-    }
-
-    .status-badge {
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.75rem;
-        font-weight: 500;
-    }
-
-    .status-active {
-        background-color: #d4edda;
-        color: #155724;
-    }
-
-    .status-inactive {
-        background-color: #f8d7da;
-        color: #721c24;
-    }
-
-    .status-published {
-        background-color: #d4edda;
-        color: #155724;
-    }
-
-    .status-draft {
-        background-color: #fff3cd;
-        color: #856404;
-    }
-
-    .status-cancelled {
-        background-color: #f8d7da;
-        color: #721c24;
-    }
-
-    .status-completed {
-        background-color: #d1ecf1;
-        color: #0c5460;
-    }
-
-    .stats-card {
-        background: white;
-        border-radius: 15px;
-        padding: 1.5rem;
-        border: none;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-        transition: all 0.3s ease;
-    }
-
-    .stats-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
-    }
-
-    .filter-sidebar {
-        background: white;
-        border-radius: 15px;
-        padding: 1.5rem;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-    }
-
-    .breadcrumb-custom {
-        background: transparent;
-        padding: 0;
-    }
-
-    .breadcrumb-custom .breadcrumb-item a {
-        color: rgba(255, 255, 255, 0.8);
-        text-decoration: none;
-    }
-
-    .breadcrumb-custom .breadcrumb-item.active {
-        color: white;
-    }
-
-    .price-display {
-        font-size: 1.25rem;
-        font-weight: 600;
-        color: var(--success-color);
-    }
-
-    .quantity-display {
-        background: var(--light-bg);
-        padding: 0.5rem 1rem;
-        border-radius: 20px;
-        font-size: 0.875rem;
-        font-weight: 500;
-    }
-
-    .btn-outline-custom {
-        border: 2px solid var(--primary-color);
-        color: var(--primary-color);
-        border-radius: 20px;
-        padding: 0.375rem 1rem;
-        font-weight: 500;
-        transition: all 0.3s ease;
-    }
-
-    .btn-outline-custom:hover {
-        background: var(--primary-color);
-        color: white;
-        transform: translateY(-1px);
-    }
-
-    .ticket-actions {
-        display: flex;
-        gap: 0.5rem;
-        align-items: center;
-    }
-
-    .action-btn {
-        width: 35px;
-        height: 35px;
-        border-radius: 50%;
-        border: none;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.3s ease;
-        cursor: pointer;
-    }
-
-    .action-btn:hover {
-        transform: scale(1.1);
-    }
-
-    .btn-view {
-        background: var(--accent-color);
-        color: white;
-    }
-
-    .btn-edit {
-        background: var(--warning-color);
-        color: white;
-    }
-
-    .btn-delete {
-        background: var(--danger-color);
-        color: white;
-    }
-
-    .event-info-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border-radius: 15px;
-        padding: 2rem;
-        margin-bottom: 2rem;
-    }
-
-    .modal-header {
-        background: var(--primary-gradient);
-        color: white;
-        border-radius: 15px 15px 0 0;
-    }
-
-    .form-control, .form-select {
-        border-radius: 10px;
-        border: 2px solid var(--border-color);
-        padding: 0.75rem 1rem;
-        transition: all 0.3s ease;
-    }
-
-    .form-control:focus, .form-select:focus {
-        border-color: var(--primary-color);
-        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-    }
-
-    .empty-state {
-        text-align: center;
-        padding: 3rem 2rem;
-        color: #6c757d;
-
-        :root {
-            --primary-color: #667eea;
-            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --secondary-color: #f093fb;
-            --accent-color: #4facfe;
-            --success-color: #00d4aa;
-            --warning-color: #feca57;
-            --danger-color: #ff6b9d;
-            --dark-color: #2c3e50;
-            --light-bg: #f8f9fa;
-            --border-color: #e9ecef;
-        }
-
-        /* Button Styles */
-
-        .btn-primary-custom {
-            background: var(--primary-gradient);
-            border: none;
-            border-radius: 25px;
-            padding: 0.5rem 1.5rem;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            color: white;
-        }
-
-        .btn-primary-custom:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-            color: white;
-        }
-
-        .btn-outline-custom {
-            border: 2px solid var(--primary-color);
-            color: var(--primary-color);
-            border-radius: 20px;
-            padding: 0.375rem 1rem;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            background: transparent;
-        }
-
-        .btn-outline-custom:hover {
-            background: var(--primary-color);
-            color: white;
-            transform: translateY(-1px);
-            border-color: var(--primary-color);
-        }
-
-        /* Header Section */
-
-        .search-section {
-            background: var(--primary-gradient);
-            color: white;
-            padding: 2rem 0;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .search-section::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -20%;
-            width: 100px;
-            height: 100px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 50%;
-            animation: float 6s ease-in-out infinite;
-        }
-
-        @keyframes float {
-            0%, 100% {
-                transform: translateY(0px);
-            }
-            50% {
-                transform: translateY(-20px);
-            }
-        }
-
-        /* Breadcrumb */
-
-        .breadcrumb-custom {
-            background: transparent;
-            padding: 0;
-            margin-bottom: 0;
-        }
-
-        .breadcrumb-custom .breadcrumb-item a {
-            color: rgba(255, 255, 255, 0.8);
-            text-decoration: none;
-            transition: color 0.3s ease;
-        }
-
-        .breadcrumb-custom .breadcrumb-item a:hover {
-            color: white;
-        }
-
-        .breadcrumb-custom .breadcrumb-item.active {
-            color: white;
-        }
-
-        .breadcrumb-custom .breadcrumb-item + .breadcrumb-item::before {
-            color: rgba(255, 255, 255, 0.6);
-        }
-
-        /* Event Info Card */
-
-        .event-info-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 15px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .event-info-card::after {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -10%;
-            width: 200px;
-            height: 200px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 50%;
-        }
-
-        /* Status Badges */
-
-        .status-badge {
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .status-active {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .status-inactive {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        .status-published {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .status-draft {
-            background-color: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeaa7;
-        }
-
-        .status-cancelled {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        .status-completed {
-            background-color: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
-        }
-
-        /* Stats Cards */
-
-        .stats-card {
-            background: white;
-            border-radius: 15px;
-            padding: 1.5rem;
-            border: none;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .stats-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: var(--primary-gradient);
-        }
-
-        .stats-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
-        }
-
-        .stats-card h4 {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 0;
-        }
-
-        .stats-card .text-primary {
-            color: var(--primary-color) !important;
-        }
-
-        .stats-card .text-success {
-            color: var(--success-color) !important;
-        }
-
-        .stats-card .text-info {
-            color: var(--accent-color) !important;
-        }
-
-        .stats-card .text-warning {
-            color: var(--warning-color) !important;
-        }
-
-        /* Filter Sidebar */
-
-        .filter-sidebar {
-            background: white;
-            border-radius: 15px;
-            padding: 1.5rem;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-            margin-bottom: 1rem;
-        }
-
-        .filter-sidebar h6 {
-            color: var(--dark-color);
-            font-weight: 600;
-            margin-bottom: 1rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 2px solid var(--border-color);
-        }
-
-        /* Ticket Cards */
-
-        .ticket-card {
-            background: white;
-            border-radius: 15px;
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-            border-left: 4px solid var(--primary-color);
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-            position: relative;
-        }
-
-        .ticket-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-            border-left-color: var(--accent-color);
-        }
-
-        .ticket-card::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 50px;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.05));
-            pointer-events: none;
-        }
-
-        /* Price and Quantity Display */
-
-        .price-display {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: var(--success-color);
-            margin-bottom: 0.5rem;
-        }
-
-        .quantity-display {
-            background: var(--light-bg);
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            font-size: 0.875rem;
-            font-weight: 500;
-            display: inline-block;
-        }
-
-        /* Action Buttons */
-
-        .ticket-actions {
-            display: flex;
-            gap: 0.5rem;
-            align-items: center;
-        }
-
-        .action-btn {
-            width: 35px;
-            height: 35px;
-            border-radius: 50%;
-            border: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            font-size: 0.875rem;
-        }
-
-        .action-btn:hover {
-            transform: scale(1.1);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
-
-        .btn-view {
-            background: var(--accent-color);
-            color: white;
-        }
-
-        .btn-view:hover {
-            background: #3a8bdb;
-        }
-
-        .btn-edit {
-            background: var(--warning-color);
-            color: white;
-        }
-
-        .btn-edit:hover {
-            background: #fdcb48;
-        }
-
-        .btn-delete {
-            background: var(--danger-color);
-            color: white;
-        }
-
-        .btn-delete:hover {
-            background: #ff5582;
-        }
-
-        /* Empty State */
-
-        .empty-state {
-            text-align: center;
-            padding: 3rem 2rem;
-            color: #6c757d;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-        }
-
-        .empty-state i {
-            font-size: 4rem;
-            color: var(--primary-color);
-            margin-bottom: 1.5rem;
-            opacity: 0.6;
-        }
-
-        .empty-state h5 {
-            color: var(--dark-color);
-            margin-bottom: 1rem;
-        }
-
-        .empty-state p {
-            margin-bottom: 2rem;
-            font-size: 1.1rem;
-        }
-
-        /* Modal Styles */
-
-        .modal-header {
-            background: var(--primary-gradient);
-            color: white;
-            border-radius: 15px 15px 0 0;
-            border-bottom: none;
-        }
-
-        .modal-content {
-            border-radius: 15px;
-            border: none;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        }
-
-        .modal-body {
-            padding: 2rem;
-        }
-
-        .modal-footer {
-            border-top: 1px solid var(--border-color);
-            padding: 1.5rem 2rem;
-        }
-
-        .btn-close-white {
-            filter: brightness(0) invert(1);
-        }
-
-        /* Form Styles */
-
-        .form-control, .form-select {
-            border-radius: 10px;
-            border: 2px solid var(--border-color);
-            padding: 0.75rem 1rem;
-            transition: all 0.3s ease;
-            font-size: 0.95rem;
-        }
-
-        .form-control:focus, .form-select:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-        }
-
-        .form-label {
-            font-weight: 600;
-            color: var(--dark-color);
-            margin-bottom: 0.5rem;
-        }
-
-        .form-label i {
-            color: var(--primary-color);
-        }
-
-        /* Pagination */
-
-        .pagination .page-link {
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            color: var(--primary-color);
-            padding: 0.5rem 0.75rem;
-            margin: 0 0.2rem;
-            transition: all 0.3s ease;
-        }
-
-        .pagination .page-link:hover {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
-            color: white;
-            transform: translateY(-1px);
-        }
-
-        .pagination .page-item.active .page-link {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
-            box-shadow: 0 2px 5px rgba(102, 126, 234, 0.3);
-        }
-
-        .pagination .page-item.disabled .page-link {
-            color: #6c757d;
-            background-color: #fff;
-            border-color: var(--border-color);
-        }
-
-        /* Quick Stats Styling */
-
-        .border-bottom {
-            border-bottom: 1px solid var(--border-color) !important;
-        }
-
-        .text-success {
-            color: var(--success-color) !important;
-        }
-
-        .text-warning {
-            color: var(--warning-color) !important;
-        }
-
-        .text-primary {
-            color: var(--primary-color) !important;
-        }
-
-        .text-info {
-            color: var(--accent-color) !important;
-        }
-
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .search-section {
-                padding: 1.5rem 0;
-            }
-
-            .event-info-card {
-                padding: 1.5rem;
-                text-align: center;
-            }
-
-            .stats-card {
-                margin-bottom: 1rem;
-            }
-
-            .ticket-card {
-                padding: 1rem;
-            }
-
-            .price-display {
-                font-size: 1rem;
-                text-align: center;
-            }
-
-            .quantity-display {
-                display: block;
-                text-align: center;
-                margin-top: 0.5rem;
-            }
-
-            .ticket-actions {
-                justify-content: center;
-                margin-top: 1rem;
-            }
-
-            .filter-sidebar {
-                margin-bottom: 1rem;
-            }
-
-            .modal-body {
-                padding: 1rem;
-            }
-        }
-
-        @media (max-width: 576px) {
-            .btn-primary-custom {
-                font-size: 0.875rem;
-                padding: 0.4rem 1rem;
-            }
-
-            .stats-card h4 {
-                font-size: 1.5rem;
-            }
-
-            .ticket-card {
-                border-left-width: 3px;
-            }
-
-            .action-btn {
-                width: 30px;
-                height: 30px;
-                font-size: 0.75rem;
-            }
-
-            .empty-state {
-                padding: 2rem 1rem;
-            }
-
-            .empty-state i {
-                font-size: 3rem;
-            }
-        }
-
-        /* Loading Animation */
-        @keyframes pulse {
-            0%, 100% {
-                opacity: 1;
-            }
-            50% {
-                opacity: 0.5;
-            }
-        }
-
-        .loading {
-            animation: pulse 1.5s ease-in-out infinite;
-        }
-
-        /* Hover Effects */
-
-        .card-hover:hover {
-            transform: translateY(-2px);
-            transition: transform 0.3s ease;
-        }
-
-        /* Utility Classes */
-
-        .bg-gradient-primary {
-            background: var(--primary-gradient);
-        }
-
-        .text-gradient {
-            background: var(--primary-gradient);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .border-gradient {
-            border: 2px solid;
-            border-image: var(--primary-gradient) 1;
-        }
-
-        /* Animation Classes */
-
-        .fade-in {
-            animation: fadeIn 0.5s ease-in;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .slide-up {
-            animation: slideUp 0.3s ease-out;
-        }
-
-        @keyframes slideUp {
-            from {
-                transform: translateY(30px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
+   :root {
+       --primary-color: #667eea;
+       --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+       --secondary-color: #f093fb;
+       --accent-color: #4facfe;
+       --success-color: #00d4aa;
+       --warning-color: #feca57;
+       --danger-color: #ff6b9d;
+       --dark-color: #2c3e50;
+       --light-bg: #f8f9fa;
+       --border-color: #e9ecef;
+   }
+
+
+   .btn-primary-custom {
+       background: var(--primary-gradient);
+       border: none;
+       border-radius: 25px;
+       padding: 0.5rem 1.5rem;
+       font-weight: 500;
+       transition: all 0.3s ease;
+   }
+
+
+   .btn-primary-custom:hover {
+       transform: translateY(-2px);
+       box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+   }
+
+
+   .search-section {
+       background: var(--primary-gradient);
+       color: white;
+       padding: 2rem 0;
+   }
+
+
+   .ticket-card {
+       background: white;
+       border-radius: 15px;
+       padding: 1.5rem;
+       margin-bottom: 1rem;
+       border-left: 4px solid var(--primary-color);
+       transition: all 0.3s ease;
+       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+   }
+
+
+   .ticket-card:hover {
+       transform: translateY(-5px);
+       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+   }
+
+
+   .status-badge {
+       padding: 0.25rem 0.75rem;
+       border-radius: 20px;
+       font-size: 0.75rem;
+       font-weight: 500;
+   }
+
+
+   .status-active {
+       background-color: #d4edda;
+       color: #155724;
+   }
+
+
+   .status-inactive {
+       background-color: #f8d7da;
+       color: #721c24;
+   }
+
+
+   .status-published {
+       background-color: #d4edda;
+       color: #155724;
+   }
+
+
+   .status-draft {
+       background-color: #fff3cd;
+       color: #856404;
+   }
+
+
+   .status-cancelled {
+       background-color: #f8d7da;
+       color: #721c24;
+   }
+
+
+   .status-completed {
+       background-color: #d1ecf1;
+       color: #0c5460;
+   }
+
+
+   .stats-card {
+       background: white;
+       border-radius: 15px;
+       padding: 1.5rem;
+       border: none;
+       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+       transition: all 0.3s ease;
+   }
+
+
+   .stats-card:hover {
+       transform: translateY(-3px);
+       box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+   }
+
+
+   .filter-sidebar {
+       background: white;
+       border-radius: 15px;
+       padding: 1.5rem;
+       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+   }
+
+
+   .breadcrumb-custom {
+       background: transparent;
+       padding: 0;
+   }
+
+
+   .breadcrumb-custom .breadcrumb-item a {
+       color: rgba(255, 255, 255, 0.8);
+       text-decoration: none;
+   }
+
+
+   .breadcrumb-custom .breadcrumb-item.active {
+       color: white;
+   }
+
+
+   .price-display {
+       font-size: 1.25rem;
+       font-weight: 600;
+       color: var(--success-color);
+   }
+
+
+   .quantity-display {
+       background: var(--light-bg);
+       padding: 0.5rem 1rem;
+       border-radius: 20px;
+       font-size: 0.875rem;
+       font-weight: 500;
+   }
+
+
+   .btn-outline-custom {
+       border: 2px solid var(--primary-color);
+       color: var(--primary-color);
+       border-radius: 20px;
+       padding: 0.375rem 1rem;
+       font-weight: 500;
+       transition: all 0.3s ease;
+   }
+
+
+   .btn-outline-custom:hover {
+       background: var(--primary-color);
+       color: white;
+       transform: translateY(-1px);
+   }
+
+
+   .ticket-actions {
+       display: flex;
+       gap: 0.5rem;
+       align-items: center;
+   }
+
+
+   .action-btn {
+       width: 35px;
+       height: 35px;
+       border-radius: 50%;
+       border: none;
+       display: flex;
+       align-items: center;
+       justify-content: center;
+       transition: all 0.3s ease;
+       cursor: pointer;
+   }
+
+
+   .action-btn:hover {
+       transform: scale(1.1);
+   }
+
+
+   .btn-view {
+       background: var(--accent-color);
+       color: white;
+   }
+
+
+   .btn-edit {
+       background: var(--warning-color);
+       color: white;
+   }
+
+
+   .btn-delete {
+       background: var(--danger-color);
+       color: white;
+   }
+
+
+   .event-info-card {
+       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+       color: white;
+       border-radius: 15px;
+       padding: 2rem;
+       margin-bottom: 2rem;
+   }
+
+
+   .modal-header {
+       background: var(--primary-gradient);
+       color: white;
+       border-radius: 15px 15px 0 0;
+   }
+
+
+   .form-control, .form-select {
+       border-radius: 10px;
+       border: 2px solid var(--border-color);
+       padding: 0.75rem 1rem;
+       transition: all 0.3s ease;
+   }
+
+
+   .form-control:focus, .form-select:focus {
+       border-color: var(--primary-color);
+       box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+   }
+
+
+   .empty-state {
+       text-align: center;
+       padding: 3rem 2rem;
+       color: #6c757d;
+
+
+       :root {
+           --primary-color: #667eea;
+           --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+           --secondary-color: #f093fb;
+           --accent-color: #4facfe;
+           --success-color: #00d4aa;
+           --warning-color: #feca57;
+           --danger-color: #ff6b9d;
+           --dark-color: #2c3e50;
+           --light-bg: #f8f9fa;
+           --border-color: #e9ecef;
+       }
+
+
+       /* Button Styles */
+
+
+       .btn-primary-custom {
+           background: var(--primary-gradient);
+           border: none;
+           border-radius: 25px;
+           padding: 0.5rem 1.5rem;
+           font-weight: 500;
+           transition: all 0.3s ease;
+           color: white;
+       }
+
+
+       .btn-primary-custom:hover {
+           transform: translateY(-2px);
+           box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+           color: white;
+       }
+
+
+       .btn-outline-custom {
+           border: 2px solid var(--primary-color);
+           color: var(--primary-color);
+           border-radius: 20px;
+           padding: 0.375rem 1rem;
+           font-weight: 500;
+           transition: all 0.3s ease;
+           background: transparent;
+       }
+
+
+       .btn-outline-custom:hover {
+           background: var(--primary-color);
+           color: white;
+           transform: translateY(-1px);
+           border-color: var(--primary-color);
+       }
+
+
+       /* Header Section */
+
+
+       .search-section {
+           background: var(--primary-gradient);
+           color: white;
+           padding: 2rem 0;
+           position: relative;
+           overflow: hidden;
+       }
+
+
+       .search-section::before {
+           content: '';
+           position: absolute;
+           top: -50%;
+           right: -20%;
+           width: 100px;
+           height: 100px;
+           background: rgba(255, 255, 255, 0.1);
+           border-radius: 50%;
+           animation: float 6s ease-in-out infinite;
+       }
+
+
+       @keyframes float {
+           0%, 100% {
+               transform: translateY(0px);
+           }
+           50% {
+               transform: translateY(-20px);
+           }
+       }
+
+
+       /* Breadcrumb */
+
+
+       .breadcrumb-custom {
+           background: transparent;
+           padding: 0;
+           margin-bottom: 0;
+       }
+
+
+       .breadcrumb-custom .breadcrumb-item a {
+           color: rgba(255, 255, 255, 0.8);
+           text-decoration: none;
+           transition: color 0.3s ease;
+       }
+
+
+       .breadcrumb-custom .breadcrumb-item a:hover {
+           color: white;
+       }
+
+
+       .breadcrumb-custom .breadcrumb-item.active {
+           color: white;
+       }
+
+
+       .breadcrumb-custom .breadcrumb-item + .breadcrumb-item::before {
+           color: rgba(255, 255, 255, 0.6);
+       }
+
+
+       /* Event Info Card */
+
+
+       .event-info-card {
+           background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+           color: white;
+           border-radius: 15px;
+           padding: 2rem;
+           margin-bottom: 2rem;
+           box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+           position: relative;
+           overflow: hidden;
+       }
+
+
+       .event-info-card::after {
+           content: '';
+           position: absolute;
+           top: -50%;
+           right: -10%;
+           width: 200px;
+           height: 200px;
+           background: rgba(255, 255, 255, 0.05);
+           border-radius: 50%;
+       }
+
+
+       /* Status Badges */
+
+
+       .status-badge {
+           padding: 0.25rem 0.75rem;
+           border-radius: 20px;
+           font-size: 0.75rem;
+           font-weight: 500;
+           text-transform: uppercase;
+           letter-spacing: 0.5px;
+       }
+
+
+       .status-active {
+           background-color: #d4edda;
+           color: #155724;
+           border: 1px solid #c3e6cb;
+       }
+
+
+       .status-inactive {
+           background-color: #f8d7da;
+           color: #721c24;
+           border: 1px solid #f5c6cb;
+       }
+
+
+       .status-published {
+           background-color: #d4edda;
+           color: #155724;
+           border: 1px solid #c3e6cb;
+       }
+
+
+       .status-draft {
+           background-color: #fff3cd;
+           color: #856404;
+           border: 1px solid #ffeaa7;
+       }
+
+
+       .status-cancelled {
+           background-color: #f8d7da;
+           color: #721c24;
+           border: 1px solid #f5c6cb;
+       }
+
+
+       .status-completed {
+           background-color: #d1ecf1;
+           color: #0c5460;
+           border: 1px solid #bee5eb;
+       }
+
+
+       /* Stats Cards */
+
+
+       .stats-card {
+           background: white;
+           border-radius: 15px;
+           padding: 1.5rem;
+           border: none;
+           box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+           transition: all 0.3s ease;
+           position: relative;
+           overflow: hidden;
+       }
+
+
+       .stats-card::before {
+           content: '';
+           position: absolute;
+           top: 0;
+           left: 0;
+           right: 0;
+           height: 3px;
+           background: var(--primary-gradient);
+       }
+
+
+       .stats-card:hover {
+           transform: translateY(-3px);
+           box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+       }
+
+
+       .stats-card h4 {
+           font-size: 2rem;
+           font-weight: 700;
+           margin-bottom: 0;
+       }
+
+
+       .stats-card .text-primary {
+           color: var(--primary-color) !important;
+       }
+
+
+       .stats-card .text-success {
+           color: var(--success-color) !important;
+       }
+
+
+       .stats-card .text-info {
+           color: var(--accent-color) !important;
+       }
+
+
+       .stats-card .text-warning {
+           color: var(--warning-color) !important;
+       }
+
+
+       /* Filter Sidebar */
+
+
+       .filter-sidebar {
+           background: white;
+           border-radius: 15px;
+           padding: 1.5rem;
+           box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+           margin-bottom: 1rem;
+       }
+
+
+       .filter-sidebar h6 {
+           color: var(--dark-color);
+           font-weight: 600;
+           margin-bottom: 1rem;
+           padding-bottom: 0.5rem;
+           border-bottom: 2px solid var(--border-color);
+       }
+
+
+       /* Ticket Cards */
+
+
+       .ticket-card {
+           background: white;
+           border-radius: 15px;
+           padding: 1.5rem;
+           margin-bottom: 1rem;
+           border-left: 4px solid var(--primary-color);
+           transition: all 0.3s ease;
+           box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+           position: relative;
+       }
+
+
+       .ticket-card:hover {
+           transform: translateY(-5px);
+           box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+           border-left-color: var(--accent-color);
+       }
+
+
+       .ticket-card::after {
+           content: '';
+           position: absolute;
+           top: 0;
+           right: 0;
+           width: 50px;
+           height: 100%;
+           background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.05));
+           pointer-events: none;
+       }
+
+
+       /* Price and Quantity Display */
+
+
+       .price-display {
+           font-size: 1.25rem;
+           font-weight: 600;
+           color: var(--success-color);
+           margin-bottom: 0.5rem;
+       }
+
+
+       .quantity-display {
+           background: var(--light-bg);
+           padding: 0.5rem 1rem;
+           border-radius: 20px;
+           font-size: 0.875rem;
+           font-weight: 500;
+           display: inline-block;
+       }
+
+
+       /* Action Buttons */
+
+
+       .ticket-actions {
+           display: flex;
+           gap: 0.5rem;
+           align-items: center;
+       }
+
+
+       .action-btn {
+           width: 35px;
+           height: 35px;
+           border-radius: 50%;
+           border: none;
+           display: flex;
+           align-items: center;
+           justify-content: center;
+           transition: all 0.3s ease;
+           cursor: pointer;
+           font-size: 0.875rem;
+       }
+
+
+       .action-btn:hover {
+           transform: scale(1.1);
+           box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+       }
+
+
+       .btn-view {
+           background: var(--accent-color);
+           color: white;
+       }
+
+
+       .btn-view:hover {
+           background: #3a8bdb;
+       }
+
+
+       .btn-edit {
+           background: var(--warning-color);
+           color: white;
+       }
+
+
+       .btn-edit:hover {
+           background: #fdcb48;
+       }
+
+
+       .btn-delete {
+           background: var(--danger-color);
+           color: white;
+       }
+
+
+       .btn-delete:hover {
+           background: #ff5582;
+       }
+
+
+       /* Empty State */
+
+
+       .empty-state {
+           text-align: center;
+           padding: 3rem 2rem;
+           color: #6c757d;
+           background: white;
+           border-radius: 15px;
+           box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+       }
+
+
+       .empty-state i {
+           font-size: 4rem;
+           color: var(--primary-color);
+           margin-bottom: 1.5rem;
+           opacity: 0.6;
+       }
+
+
+       .empty-state h5 {
+           color: var(--dark-color);
+           margin-bottom: 1rem;
+       }
+
+
+       .empty-state p {
+           margin-bottom: 2rem;
+           font-size: 1.1rem;
+       }
+
+
+       /* Modal Styles */
+
+
+       .modal-header {
+           background: var(--primary-gradient);
+           color: white;
+           border-radius: 15px 15px 0 0;
+           border-bottom: none;
+       }
+
+
+       .modal-content {
+           border-radius: 15px;
+           border: none;
+           box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+       }
+
+
+       .modal-body {
+           padding: 2rem;
+       }
+
+
+       .modal-footer {
+           border-top: 1px solid var(--border-color);
+           padding: 1.5rem 2rem;
+       }
+
+
+       .btn-close-white {
+           filter: brightness(0) invert(1);
+       }
+
+
+       /* Form Styles */
+
+
+       .form-control, .form-select {
+           border-radius: 10px;
+           border: 2px solid var(--border-color);
+           padding: 0.75rem 1rem;
+           transition: all 0.3s ease;
+           font-size: 0.95rem;
+       }
+
+
+       .form-control:focus, .form-select:focus {
+           border-color: var(--primary-color);
+           box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+       }
+
+
+       .form-label {
+           font-weight: 600;
+           color: var(--dark-color);
+           margin-bottom: 0.5rem;
+       }
+
+
+       .form-label i {
+           color: var(--primary-color);
+       }
+
+
+       /* Pagination */
+
+
+       .pagination .page-link {
+           border-radius: 8px;
+           border: 1px solid var(--border-color);
+           color: var(--primary-color);
+           padding: 0.5rem 0.75rem;
+           margin: 0 0.2rem;
+           transition: all 0.3s ease;
+       }
+
+
+       .pagination .page-link:hover {
+           background-color: var(--primary-color);
+           border-color: var(--primary-color);
+           color: white;
+           transform: translateY(-1px);
+       }
+
+
+       .pagination .page-item.active .page-link {
+           background-color: var(--primary-color);
+           border-color: var(--primary-color);
+           box-shadow: 0 2px 5px rgba(102, 126, 234, 0.3);
+       }
+
+
+       .pagination .page-item.disabled .page-link {
+           color: #6c757d;
+           background-color: #fff;
+           border-color: var(--border-color);
+       }
+
+
+       /* Quick Stats Styling */
+
+
+       .border-bottom {
+           border-bottom: 1px solid var(--border-color) !important;
+       }
+
+
+       .text-success {
+           color: var(--success-color) !important;
+       }
+
+
+       .text-warning {
+           color: var(--warning-color) !important;
+       }
+
+
+       .text-primary {
+           color: var(--primary-color) !important;
+       }
+
+
+       .text-info {
+           color: var(--accent-color) !important;
+       }
+
+
+       /* Responsive Design */
+       @media (max-width: 768px) {
+           .search-section {
+               padding: 1.5rem 0;
+           }
+
+
+           .event-info-card {
+               padding: 1.5rem;
+               text-align: center;
+           }
+
+
+           .stats-card {
+               margin-bottom: 1rem;
+           }
+
+
+           .ticket-card {
+               padding: 1rem;
+           }
+
+
+           .price-display {
+               font-size: 1rem;
+               text-align: center;
+           }
+
+
+           .quantity-display {
+               display: block;
+               text-align: center;
+               margin-top: 0.5rem;
+           }
+
+
+           .ticket-actions {
+               justify-content: center;
+               margin-top: 1rem;
+           }
+
+
+           .filter-sidebar {
+               margin-bottom: 1rem;
+           }
+
+
+           .modal-body {
+               padding: 1rem;
+           }
+       }
+
+
+       @media (max-width: 576px) {
+           .btn-primary-custom {
+               font-size: 0.875rem;
+               padding: 0.4rem 1rem;
+           }
+
+
+           .stats-card h4 {
+               font-size: 1.5rem;
+           }
+
+
+           .ticket-card {
+               border-left-width: 3px;
+           }
+
+
+           .action-btn {
+               width: 30px;
+               height: 30px;
+               font-size: 0.75rem;
+           }
+
+
+           .empty-state {
+               padding: 2rem 1rem;
+           }
+
+
+           .empty-state i {
+               font-size: 3rem;
+           }
+       }
+
+
+       /* Loading Animation */
+       @keyframes pulse {
+           0%, 100% {
+               opacity: 1;
+           }
+           50% {
+               opacity: 0.5;
+           }
+       }
+
+
+       .loading {
+           animation: pulse 1.5s ease-in-out infinite;
+       }
+
+
+       /* Hover Effects */
+
+
+       .card-hover:hover {
+           transform: translateY(-2px);
+           transition: transform 0.3s ease;
+       }
+
+
+       /* Utility Classes */
+
+
+       .bg-gradient-primary {
+           background: var(--primary-gradient);
+       }
+
+
+       .text-gradient {
+           background: var(--primary-gradient);
+           -webkit-background-clip: text;
+           -webkit-text-fill-color: transparent;
+           background-clip: text;
+       }
+
+
+       .border-gradient {
+           border: 2px solid;
+           border-image: var(--primary-gradient) 1;
+       }
+
+
+       /* Animation Classes */
+
+
+       .fade-in {
+           animation: fadeIn 0.5s ease-in;
+       }
+
+
+       @keyframes fadeIn {
+           from {
+               opacity: 0;
+               transform: translateY(20px);
+           }
+           to {
+               opacity: 1;
+               transform: translateY(0);
+           }
+       }
+
+
+       .slide-up {
+           animation: slideUp 0.3s ease-out;
+       }
+
+
+       @keyframes slideUp {
+           from {
+               transform: translateY(30px);
+               opacity: 0;
+           }
+           to {
+               transform: translateY(0);
+               opacity: 1;
+           }
+       }
+   }
 </style>
 <!-- Dashboard Header -->
 <section class="search-section">
-    <div class="container">
-        <div class="row">
-            <div class="col-12">
-                <!-- Breadcrumb -->
-                <nav aria-label="breadcrumb" class="mb-3">
-                    <ol class="breadcrumb breadcrumb-custom">
-                        <li class="breadcrumb-item">
-                            <a href="{{ url_for('organizer.dashboard') }}">
-                                <i class="fas fa-home me-1"></i>Dashboard
-                            </a>
-                        </li>
-                        <li class="breadcrumb-item active">Quản lý vé</li>
-                    </ol>
-                </nav>
+   <div class="container">
+       <div class="row">
+           <div class="col-12">
+               <!-- Breadcrumb -->
+               <nav aria-label="breadcrumb" class="mb-3">
+                   <ol class="breadcrumb breadcrumb-custom">
+                       <li class="breadcrumb-item">
+                           <a href="{{ url_for('organizer.dashboard') }}">
+                               <i class="fas fa-home me-1"></i>Dashboard
+                           </a>
+                       </li>
+                       <li class="breadcrumb-item active">Quản lý vé</li>
+                   </ol>
+               </nav>
 
-                <!-- Page Title -->
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h2 class="h3 mb-2">
-                            <i class="fas fa-ticket-alt me-2"></i>Quản lý vé sự kiện
-                        </h2>
-                        <p class="mb-0 opacity-75">Quản lý các loại vé cho sự kiện của bạn</p>
-                    </div>
-                    <a href="{{ url_for('event.create_ticket_type', event_id=event.id) }}"
-                       class="btn btn-primary-custom">
-                        <i class="fas fa-plus me-2"></i>Thêm loại vé
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
+
+               <!-- Page Title -->
+               <div class="d-flex justify-content-between align-items-center">
+ <div>
+   <h2 class="h3 mb-2">
+     <i class="fas fa-ticket-alt me-2"></i>Quản lý vé sự kiện
+   </h2>
+   <p class="mb-0 opacity-75">Quản lý các loại vé cho sự kiện của bạn</p>
+ </div>
+ <div class="d-flex gap-2">
+   <a class="btn btn-outline-primary"
+      href="{{ url_for('organizer.scan_qr_view', event_id=event.id) }}">
+     <i class="fas fa-qrcode me-2"></i>Quét QR (Check-in)
+   </a>
+   <a href="{{ url_for('event.create_ticket_type', event_id=event.id) }}"
+      class="btn btn-primary-custom">
+     <i class="fas fa-plus me-2"></i>Thêm loại vé
+   </a>
+ </div>
+</div>
+
+
+           </div>
+       </div>
+   </div>
 </section>
+
 
 <!-- Event Info Section -->
 <section class="py-4">
-    <div class="container">
-        <div class="event-info-card">
-            <div class="row align-items-center">
-                <div class="col-md-8">
-                    <h4 class="mb-2">{{ event.name }}</h4>
-                    <p class="mb-2 opacity-75">
-                        {{ event.description[:150] }}{% if event.description|length > 150 %}...{% endif %}
-                    </p>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <small><i class="fas fa-calendar me-1"></i>{{ event.start_datetime.strftime('%d/%m/%Y
-                                %H:%M') }}</small>
-                        </div>
-                        <div class="col-md-6">
-                            <small><i class="fas fa-map-marker-alt me-1"></i>{{ event.address }}</small>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4 text-end">
-                    <div class="d-flex flex-column align-items-end">
-                        <span class="status-badge status-{{ event.status.value.lower() }} mb-2">
-                            {% if event.status.value == 'PUBLISHED' %}Đã xuất bản
-                            {% elif event.status.value == 'DRAFT' %}Bản nháp
-                            {% elif event.status.value == 'CANCELLED' %}Đã hủy
-                            {% elif event.status.value == 'COMPLETED' %}Đã hoàn thành
-                            {% endif %}
-                        </span>
-                        <a href="{{ url_for('organizer.dashboard') }}" class="btn btn-outline-light btn-sm">
-                            <i class="fas fa-arrow-left me-1"></i>Quay lại Dashboard
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+   <div class="container">
+       <div class="event-info-card">
+           <div class="row align-items-center">
+               <div class="col-md-8">
+                   <h4 class="mb-2">{{ event.name }}</h4>
+                   <p class="mb-2 opacity-75">
+                       {{ event.description[:150] }}{% if event.description|length > 150 %}...{% endif %}
+                   </p>
+                   <div class="row">
+                       <div class="col-md-6">
+                           <small><i class="fas fa-calendar me-1"></i>{{ event.start_datetime.strftime('%d/%m/%Y
+                               %H:%M') }}</small>
+                       </div>
+                       <div class="col-md-6">
+                           <small><i class="fas fa-map-marker-alt me-1"></i>{{ event.address }}</small>
+                       </div>
+                   </div>
+               </div>
+               <div class="col-md-4 text-end">
+                   <div class="d-flex flex-column align-items-end">
+                       <span class="status-badge status-{{ event.status.value.lower() }} mb-2">
+                           {% if event.status.value == 'PUBLISHED' %}Đã xuất bản
+                           {% elif event.status.value == 'DRAFT' %}Bản nháp
+                           {% elif event.status.value == 'CANCELLED' %}Đã hủy
+                           {% elif event.status.value == 'COMPLETED' %}Đã hoàn thành
+                           {% endif %}
+                       </span>
+                       <a href="{{ url_for('organizer.dashboard') }}" class="btn btn-outline-light btn-sm">
+                           <i class="fas fa-arrow-left me-1"></i>Quay lại Dashboard
+                       </a>
+                   </div>
+               </div>
+           </div>
+       </div>
+   </div>
 </section>
+
 
 <!-- Statistics Cards -->
 <section class="py-4">
-    <div class="container">
-        <div class="row g-4 mb-4">
-            <div class="col-lg-3 col-md-6">
-                <div class="stats-card text-center">
-                    <i class="fas fa-layer-group fa-2x text-primary mb-2"></i>
-                    <h4 class="mb-0">{{ ticket_types|length }}</h4>
-                    <p class="text-muted mb-0">Loại vé</p>
-                </div>
-            </div>
-            <div class="col-lg-3 col-md-6">
-                <div class="stats-card text-center">
-                    <i class="fas fa-tickets-alt fa-2x text-success mb-2"></i>
-                    <h4 class="mb-0">{{ total_quantity }}</h4>
-                    <p class="text-muted mb-0">Tổng số vé</p>
-                </div>
-            </div>
-            <div class="col-lg-3 col-md-6">
-                <div class="stats-card text-center">
-                    <i class="fas fa-chart-line fa-2x text-info mb-2"></i>
-                    <h4 class="mb-0">{{ total_sold }}</h4>
-                    <p class="text-muted mb-0">Đã bán</p>
-                </div>
-            </div>
-            <div class="col-lg-3 col-md-6">
-                <div class="stats-card text-center">
-                    <i class="fas fa-money-bill-wave fa-2x text-warning mb-2"></i>
-                    <h4 class="mb-0">{{ "{:,.0f}".format(total_revenue) }}</h4>
-                    <p class="text-muted mb-0">Doanh thu (VNĐ)</p>
-                </div>
-            </div>
-        </div>
-    </div>
+   <div class="container">
+       <div class="row g-4 mb-4">
+           <div class="col-lg-3 col-md-6">
+               <div class="stats-card text-center">
+                   <i class="fas fa-layer-group fa-2x text-primary mb-2"></i>
+                   <h4 class="mb-0">{{ ticket_types|length }}</h4>
+                   <p class="text-muted mb-0">Loại vé</p>
+               </div>
+           </div>
+           <div class="col-lg-3 col-md-6">
+               <div class="stats-card text-center">
+                   <i class="fas fa-tickets-alt fa-2x text-success mb-2"></i>
+                   <h4 class="mb-0">{{ total_quantity }}</h4>
+                   <p class="text-muted mb-0">Tổng số vé</p>
+               </div>
+           </div>
+           <div class="col-lg-3 col-md-6">
+               <div class="stats-card text-center">
+                   <i class="fas fa-chart-line fa-2x text-info mb-2"></i>
+                   <h4 class="mb-0">{{ total_sold }}</h4>
+                   <p class="text-muted mb-0">Đã bán</p>
+               </div>
+           </div>
+           <div class="col-lg-3 col-md-6">
+               <div class="stats-card text-center">
+                   <i class="fas fa-money-bill-wave fa-2x text-warning mb-2"></i>
+                   <h4 class="mb-0">{{ "{:,.0f}".format(total_revenue) }}</h4>
+                   <p class="text-muted mb-0">Doanh thu (VNĐ)</p>
+               </div>
+           </div>
+       </div>
+   </div>
 </section>
+
 
 <!-- Main Content -->
 <section class="py-4">
-    <div class="container">
-        <div class="row">
-            <div class="col-lg-9">
-                <!-- Filters -->
-                <div class="filter-sidebar mb-4">
-                    <div class="row align-items-center">
-                        <div class="col-md-6">
-                            <h6><i class="fas fa-filter me-2"></i>Bộ lọc</h6>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="row g-2">
-                                <div class="col-6">
-                                    <select class="form-select form-select-sm" id="statusFilter">
-                                        <option value="">Tất cả trạng thái</option>
-                                        <option value="active">Đang hoạt động</option>
-                                        <option value="inactive">Không hoạt động</option>
-                                    </select>
-                                </div>
-                                <div class="col-6">
-                                    <select class="form-select form-select-sm" id="sortBy">
-                                        <option value="name">Tên vé</option>
-                                        <option value="price">Giá vé</option>
-                                        <option value="quantity">Số lượng</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+   <div class="container">
+       <div class="row">
+           <div class="col-lg-9">
+               <!-- Filters -->
+               <div class="filter-sidebar mb-4">
+                   <div class="row align-items-center">
+                       <div class="col-md-6">
+                           <h6><i class="fas fa-filter me-2"></i>Bộ lọc</h6>
+                       </div>
+                       <div class="col-md-6">
+                           <div class="row g-2">
+                               <div class="col-6">
+                                   <select class="form-select form-select-sm" id="statusFilter">
+                                       <option value="">Tất cả trạng thái</option>
+                                       <option value="active">Đang hoạt động</option>
+                                       <option value="inactive">Không hoạt động</option>
+                                   </select>
+                               </div>
+                               <div class="col-6">
+                                   <select class="form-select form-select-sm" id="sortBy">
+                                       <option value="name">Tên vé</option>
+                                       <option value="price">Giá vé</option>
+                                       <option value="quantity">Số lượng</option>
+                                   </select>
+                               </div>
+                           </div>
+                       </div>
+                   </div>
+               </div>
 
-                <!-- Ticket Types List -->
-                <div id="ticketsList">
-                    {% if ticket_types %}
-                    {% for ticket in ticket_types %}
-                    <div class="ticket-card" data-ticket-id="{{ ticket.id }}">
-                        <div class="row align-items-center">
-                            <div class="col-lg-6">
-                                <div class="d-flex align-items-start">
-                                    <div class="me-3">
-                                        <i class="fas fa-ticket-alt fa-2x text-primary"></i>
-                                    </div>
-                                    <div>
-                                        <h6 class="mb-1">{{ ticket.name }}</h6>
-                                        <p class="text-muted small mb-2">
-                                            {{ ticket.description[:100] }}{% if ticket.description|length > 100 %}...{%
-                                            endif %}
-                                        </p>
-                                        <span class="status-badge {{ 'status-active' if ticket.active else 'status-inactive' }}">
-                                                {{ 'Đang hoạt động' if ticket.active else 'Không hoạt động' }}
-                                            </span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-lg-3 text-center">
-                                <div class="price-display">{{ "{:,.0f}".format(ticket.price) }} VNĐ</div>
-                                <!--                                <div class="quantity-display mt-2">-->
-                                <!--                                    <i class="fas fa-users me-1"></i>{{ ticket.sold_count or 0 }}/{{ ticket.quantity }}-->
-                                <!--                                </div>-->
-                            </div>
-                            <div class="col-lg-3">
-                                <div class="ticket-actions justify-content-end">
-                                    <button class="action-btn btn-view" onclick="viewTicketDetail({{ ticket.id }})"
-                                            title="Xem chi tiết">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <a href="{{ url_for('event.edit_ticket_type', ticket_type_id=ticket.id) }}"
-                                       class="action-btn btn-edit" title="Chỉnh sửa">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
 
-                                    <button class="btn btn-danger" onclick="deleteTicketType({{ ticket.id }})">
-                                        <i class="fas fa-trash"></i> Xoá
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                    {% else %}
-                    <!-- Empty State -->
-                    <div class="empty-state">
-                        <i class="fas fa-ticket-alt"></i>
-                        <h5>Chưa có loại vé nào</h5>
-                        <p>Hãy tạo loại vé đầu tiên cho sự kiện của bạn</p>
-                        <button class="btn btn-primary-custom" data-bs-toggle="modal" data-bs-target="#addTicketModal">
-                            <i class="fas fa-plus me-2"></i>Thêm loại vé đầu tiên
-                        </button>
-                    </div>
-                    {% endif %}
-                </div>
+               <!-- Ticket Types List -->
+               <div id="ticketsList">
+                   {% if ticket_types %}
+                   {% for ticket in ticket_types %}
+                   <div class="ticket-card" data-ticket-id="{{ ticket.id }}">
+                       <div class="row align-items-center">
+                           <div class="col-lg-6">
+                               <div class="d-flex align-items-start">
+                                   <div class="me-3">
+                                       <i class="fas fa-ticket-alt fa-2x text-primary"></i>
+                                   </div>
+                                   <div>
+                                       <h6 class="mb-1">{{ ticket.name }}</h6>
+                                       <p class="text-muted small mb-2">
+                                           {{ ticket.description[:100] }}{% if ticket.description|length > 100 %}...{%
+                                           endif %}
+                                       </p>
+                                       <span class="status-badge {{ 'status-active' if ticket.active else 'status-inactive' }}">
+                                               {{ 'Đang hoạt động' if ticket.active else 'Không hoạt động' }}
+                                           </span>
+                                   </div>
+                               </div>
+                           </div>
+                           <div class="col-lg-3 text-center">
+                               <div class="price-display">{{ "{:,.0f}".format(ticket.price) }} VNĐ</div>
+                               <!--                                <div class="quantity-display mt-2">-->
+                               <!--                                    <i class="fas fa-users me-1"></i>{{ ticket.sold_count or 0 }}/{{ ticket.quantity }}-->
+                               <!--                                </div>-->
+                           </div>
+                           <div class="col-lg-3">
+                               <div class="ticket-actions justify-content-end">
+                                   <button class="action-btn btn-view" onclick="deleteTicketType({{ ticket.id }})"
+                                           title="Xem chi tiết">
+                                       <i class="fas fa-eye"></i>
+                                   </button>
+                                   <a href="{{ url_for('event.edit_ticket_type', ticket_type_id=ticket.id) }}"
+                                      class="action-btn btn-edit" title="Chỉnh sửa">
+                                       <i class="fas fa-edit"></i>
+                                   </a>
 
-                <!-- Pagination -->
-                {% if pagination and pagination.pages > 1 %}
-                <nav aria-label="Page navigation" class="mt-4">
-                    <ul class="pagination justify-content-center">
-                        {% if pagination.has_prev %}
-                        <li class="page-item">
-                            <a class="page-link"
-                               href="{{ url_for('ticket.manage_tickets', event_id=event.id, page=pagination.prev_num) }}">Trước</a>
-                        </li>
-                        {% else %}
-                        <li class="page-item disabled">
-                            <span class="page-link">Trước</span>
-                        </li>
-                        {% endif %}
 
-                        {% for page_num in pagination.iter_pages() %}
-                        {% if page_num %}
-                        {% if page_num != pagination.page %}
-                        <li class="page-item">
-                            <a class="page-link"
-                               href="{{ url_for('ticket.manage_tickets', event_id=event.id, page=page_num) }}">{{
-                                page_num }}</a>
-                        </li>
-                        {% else %}
-                        <li class="page-item active">
-                            <span class="page-link">{{ page_num }}</span>
-                        </li>
-                        {% endif %}
-                        {% else %}
-                        <li class="page-item disabled">
-                            <span class="page-link">...</span>
-                        </li>
-                        {% endif %}
-                        {% endfor %}
+                                   <button class="btn btn-danger" onclick="deleteTicketType({{ ticket.id }})">
+                                       <i class="fas fa-trash"></i> Xoá
+                                   </button>
+                               </div>
+                           </div>
+                       </div>
+                   </div>
+                   {% endfor %}
+                   {% else %}
+                   <!-- Empty State -->
+                   <div class="empty-state">
+                       <i class="fas fa-ticket-alt"></i>
+                       <h5>Chưa có loại vé nào</h5>
+                       <p>Hãy tạo loại vé đầu tiên cho sự kiện của bạn</p>
+                       <button class="btn btn-primary-custom" data-bs-toggle="modal" data-bs-target="#addTicketModal">
+                           <i class="fas fa-plus me-2"></i>Thêm loại vé đầu tiên
+                       </button>
+                   </div>
+                   {% endif %}
+               </div>
 
-                        {% if pagination.has_next %}
-                        <li class="page-item">
-                            <a class="page-link"
-                               href="{{ url_for('ticket.manage_tickets', event_id=event.id, page=pagination.next_num) }}">Sau</a>
-                        </li>
-                        {% else %}
-                        <li class="page-item disabled">
-                            <span class="page-link">Sau</span>
-                        </li>
-                        {% endif %}
-                    </ul>
-                </nav>
-                {% endif %}
-            </div>
 
-            <!-- Sidebar -->
-            <div class="col-lg-3">
-                <!-- Quick Actions -->
-                <div class="filter-sidebar mb-4">
-                    <h6><i class="fas fa-bolt me-2"></i>Thao tác nhanh</h6>
-                    <div class="d-grid gap-2">
-                        <button class="btn btn-outline-custom btn-sm" data-bs-toggle="modal"
-                                data-bs-target="#addTicketModal">
-                            <i class="fas fa-plus me-2"></i>Thêm loại vé
-                        </button>
-                        <button class="btn btn-outline-custom btn-sm" onclick="exportTicketData()">
-                            <i class="fas fa-download me-2"></i>Xuất dữ liệu
-                        </button>
-                        <button class="btn btn-outline-custom btn-sm" onclick="viewSalesReport()">
-                            <i class="fas fa-chart-bar me-2"></i>Báo cáo bán vé
-                        </button>
-                    </div>
-                </div>
+               <!-- Pagination -->
+               {% if pagination and pagination.pages > 1 %}
+               <nav aria-label="Page navigation" class="mt-4">
+                   <ul class="pagination justify-content-center">
+                       {% if pagination.has_prev %}
+                       <li class="page-item">
+                           <a class="page-link"
+                              href="{{ url_for('ticket.manage_tickets', event_id=event.id, page=pagination.prev_num) }}">Trước</a>
+                       </li>
+                       {% else %}
+                       <li class="page-item disabled">
+                           <span class="page-link">Trước</span>
+                       </li>
+                       {% endif %}
 
-                <!-- Quick Stats -->
-                <div class="filter-sidebar">
-                    <h6><i class="fas fa-info-circle me-2"></i>Thống kê nhanh</h6>
-                    <div class="small">
-                        <div class="d-flex justify-content-between py-2 border-bottom">
-                            <span>Tỷ lệ bán vé:</span>
-                            <strong class="text-success">
-                                {% if total_quantity > 0 %}
-                                {{ "%.1f"|format((total_sold / total_quantity) * 100) }}%
-                                {% else %}
-                                0%
-                                {% endif %}
-                            </strong>
-                        </div>
-                        <div class="d-flex justify-content-between py-2 border-bottom">
-                            <span>Loại vé bán chạy nhất:</span>
-                            <strong>{{ best_selling_ticket.name if best_selling_ticket else 'Chưa có' }}</strong>
-                        </div>
-                        <div class="d-flex justify-content-between py-2 border-bottom">
-                            <span>Doanh thu trung bình/vé:</span>
-                            <strong>
-                                {% if total_sold > 0 %}
-                                {{ "{:,.0f}".format(total_revenue / total_sold) }} VNĐ
-                                {% else %}
-                                0 VNĐ
-                                {% endif %}
-                            </strong>
-                        </div>
-                        <div class="d-flex justify-content-between py-2">
-                            <span>Còn lại:</span>
-                            <strong class="text-warning">{{ total_quantity - total_sold }} vé</strong>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+
+                       {% for page_num in pagination.iter_pages() %}
+                       {% if page_num %}
+                       {% if page_num != pagination.page %}
+                       <li class="page-item">
+                           <a class="page-link"
+                              href="{{ url_for('ticket.manage_tickets', event_id=event.id, page=page_num) }}">{{
+                               page_num }}</a>
+                       </li>
+                       {% else %}
+                       <li class="page-item active">
+                           <span class="page-link">{{ page_num }}</span>
+                       </li>
+                       {% endif %}
+                       {% else %}
+                       <li class="page-item disabled">
+                           <span class="page-link">...</span>
+                       </li>
+                       {% endif %}
+                       {% endfor %}
+
+
+                       {% if pagination.has_next %}
+                       <li class="page-item">
+                           <a class="page-link"
+                              href="{{ url_for('ticket.manage_tickets', event_id=event.id, page=pagination.next_num) }}">Sau</a>
+                       </li>
+                       {% else %}
+                       <li class="page-item disabled">
+                           <span class="page-link">Sau</span>
+                       </li>
+                       {% endif %}
+                   </ul>
+               </nav>
+               {% endif %}
+           </div>
+
+
+           <!-- Sidebar -->
+           <div class="col-lg-3">
+               <!-- Quick Actions -->
+               <div class="filter-sidebar mb-4">
+                   <h6><i class="fas fa-bolt me-2"></i>Thao tác nhanh</h6>
+                   <div class="d-grid gap-2">
+                       <button class="btn btn-outline-custom btn-sm" data-bs-toggle="modal"
+                               data-bs-target="#addTicketModal">
+                           <i class="fas fa-plus me-2"></i>Thêm loại vé
+                       </button>
+                       <button class="btn btn-outline-custom btn-sm" onclick="exportTicketData()">
+                           <i class="fas fa-download me-2"></i>Xuất dữ liệu
+                       </button>
+                       <button class="btn btn-outline-custom btn-sm" onclick="viewSalesReport()">
+                           <i class="fas fa-chart-bar me-2"></i>Báo cáo bán vé
+                       </button>
+                   </div>
+               </div>
+
+
+               <!-- Quick Stats -->
+               <div class="filter-sidebar">
+                   <h6><i class="fas fa-info-circle me-2"></i>Thống kê nhanh</h6>
+                   <div class="small">
+                       <div class="d-flex justify-content-between py-2 border-bottom">
+                           <span>Tỷ lệ bán vé:</span>
+                           <strong class="text-success">
+                               {% if total_quantity > 0 %}
+                               {{ "%.1f"|format((total_sold / total_quantity) * 100) }}%
+                               {% else %}
+                               0%
+                               {% endif %}
+                           </strong>
+                       </div>
+                       <div class="d-flex justify-content-between py-2 border-bottom">
+                           <span>Loại vé bán chạy nhất:</span>
+                           <strong>{{ best_selling_ticket.name if best_selling_ticket else 'Chưa có' }}</strong>
+                       </div>
+                       <div class="d-flex justify-content-between py-2 border-bottom">
+                           <span>Doanh thu trung bình/vé:</span>
+                           <strong>
+                               {% if total_sold > 0 %}
+                               {{ "{:,.0f}".format(total_revenue / total_sold) }} VNĐ
+                               {% else %}
+                               0 VNĐ
+                               {% endif %}
+                           </strong>
+                       </div>
+                       <div class="d-flex justify-content-between py-2">
+                           <span>Còn lại:</span>
+                           <strong class="text-warning">{{ total_quantity - total_sold }} vé</strong>
+                       </div>
+                   </div>
+               </div>
+           </div>
+       </div>
+   </div>
 </section>
+
 
 <!-- Add/Edit Ticket Modal -->
 <div class="modal fade" id="addTicketModal" tabindex="-1" aria-labelledby="addTicketModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="addTicketModalLabel">
-                    <i class="fas fa-plus me-2"></i>Thêm loại vé mới
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                        aria-label="Close"></button>
-            </div>
-            <form id="ticketForm" method="POST">
-                <div class="modal-body">
-                    <input type="hidden" id="ticketId" name="ticket_id" value="">
+   <div class="modal-dialog modal-lg">
+       <div class="modal-content">
+           <div class="modal-header">
+               <h5 class="modal-title" id="addTicketModalLabel">
+                   <i class="fas fa-plus me-2"></i>Thêm loại vé mới
+               </h5>
+               <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                       aria-label="Close"></button>
+           </div>
+           <form id="ticketForm" method="POST">
+               <div class="modal-body">
+                   <input type="hidden" id="ticketId" name="ticket_id" value="">
 
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label for="ticketName" class="form-label">
-                                <i class="fas fa-tag me-1"></i>Tên loại vé *
-                            </label>
-                            <input type="text" class="form-control" id="ticketName" name="name" required
-                                   placeholder="VD: Vé VIP, Vé thường...">
-                        </div>
-                        <div class="col-md-6">
-                            <label for="ticketPrice" class="form-label">
-                                <i class="fas fa-money-bill me-1"></i>Giá vé (VNĐ) *
-                            </label>
-                            <input type="number" class="form-control" id="ticketPrice" name="price" required
-                                   placeholder="0" min="0" step="1000">
-                        </div>
-                        <div class="col-md-6">
-                            <label for="ticketQuantity" class="form-label">
-                                <i class="fas fa-sort-numeric-up me-1"></i>Số lượng *
-                            </label>
-                            <input type="number" class="form-control" id="ticketQuantity" name="quantity" required
-                                   placeholder="0" min="1">
-                        </div>
-                        <div class="col-md-6">
-                            <label for="ticketStatus" class="form-label">
-                                <i class="fas fa-toggle-on me-1"></i>Trạng thái
-                            </label>
-                            <select class="form-select" id="ticketStatus" name="active">
-                                <option value="true" selected>Đang hoạt động</option>
-                                <option value="false">Không hoạt động</option>
-                            </select>
-                        </div>
-                        <div class="col-12">
-                            <label for="ticketDescription" class="form-label">
-                                <i class="fas fa-align-left me-1"></i>Mô tả loại vé
-                            </label>
-                            <textarea class="form-control" id="ticketDescription" name="description" rows="3"
-                                      placeholder="Mô tả chi tiết về loại vé này..."></textarea>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="btn btn-primary-custom">
-                        <i class="fas fa-save me-2"></i>Lưu loại vé
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
+
+                   <div class="row g-3">
+                       <div class="col-md-6">
+                           <label for="ticketName" class="form-label">
+                               <i class="fas fa-tag me-1"></i>Tên loại vé *
+                           </label>
+                           <input type="text" class="form-control" id="ticketName" name="name" required
+                                  placeholder="VD: Vé VIP, Vé thường...">
+                       </div>
+                       <div class="col-md-6">
+                           <label for="ticketPrice" class="form-label">
+                               <i class="fas fa-money-bill me-1"></i>Giá vé (VNĐ) *
+                           </label>
+                           <input type="number" class="form-control" id="ticketPrice" name="price" required
+                                  placeholder="0" min="0" step="1000">
+                       </div>
+                       <div class="col-md-6">
+                           <label for="ticketQuantity" class="form-label">
+                               <i class="fas fa-sort-numeric-up me-1"></i>Số lượng *
+                           </label>
+                           <input type="number" class="form-control" id="ticketQuantity" name="quantity" required
+                                  placeholder="0" min="1">
+                       </div>
+                       <div class="col-md-6">
+                           <label for="ticketStatus" class="form-label">
+                               <i class="fas fa-toggle-on me-1"></i>Trạng thái
+                           </label>
+                           <select class="form-select" id="ticketStatus" name="active">
+                               <option value="true" selected>Đang hoạt động</option>
+                               <option value="false">Không hoạt động</option>
+                           </select>
+                       </div>
+                       <div class="col-12">
+                           <label for="ticketDescription" class="form-label">
+                               <i class="fas fa-align-left me-1"></i>Mô tả loại vé
+                           </label>
+                           <textarea class="form-control" id="ticketDescription" name="description" rows="3"
+                                     placeholder="Mô tả chi tiết về loại vé này..."></textarea>
+                       </div>
+                   </div>
+               </div>
+               <div class="modal-footer">
+                   <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                   <button type="submit" class="btn btn-primary-custom">
+                       <i class="fas fa-save me-2"></i>Lưu loại vé
+                   </button>
+               </div>
+           </form>
+       </div>
+   </div>
 </div>
+
 
 <!-- Ticket Detail Modal -->
 <div class="modal fade" id="ticketDetailModal" tabindex="-1" aria-labelledby="ticketDetailModalLabel"
-     aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="ticketDetailModalLabel">
-                    <i class="fas fa-eye me-2"></i>Chi tiết loại vé
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                        aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="row g-4">
-                    <div class="col-md-6">
-                        <div class="card border-0 bg-light">
-                            <div class="card-body text-center">
-                                <i class="fas fa-ticket-alt fa-3x text-primary mb-3"></i>
-                                <h5 id="detailTicketName"></h5>
-                                <span class="status-badge" id="detailTicketStatus"></span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="card border-0 bg-light">
-                            <div class="card-body">
-                                <div class="row g-3">
-                                    <div class="col-6">
-                                        <div class="text-center">
-                                            <h4 class="text-success mb-0" id="detailTicketPrice"></h4>
-                                            <small class="text-muted">VNĐ</small>
-                                        </div>
-                                    </div>
-                                    <div class="col-6">
-                                        <div class="text-center">
-                                            <h4 class="text-info mb-0" id="detailTicketQuantity"></h4>
-                                            <small class="text-muted">Đã bán/Tổng</small>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-12">
-                        <h6><i class="fas fa-align-left me-2"></i>Mô tả</h6>
-                        <p class="text-muted" id="detailTicketDescription"></p>
-                    </div>
-                    <div class="col-md-6">
-                        <h6><i class="fas fa-chart-line me-2"></i>Thống kê bán vé</h6>
-                        <div class="small">
-                            <div class="d-flex justify-content-between py-1">
-                                <span>Đã bán:</span>
-                                <strong id="detailSoldCount"></strong>
-                            </div>
-                            <div class="d-flex justify-content-between py-1">
-                                <span>Còn lại:</span>
-                                <strong id="detailRemainingCount"></strong>
-                            </div>
-                            <div class="d-flex justify-content-between py-1">
-                                <span>Tỷ lệ bán:</span>
-                                <strong class="text-success" id="detailSaleRate"></strong>
-                            </div>
-                            <div class="d-flex justify-content-between py-1">
-                                <span>Doanh thu:</span>
-                                <strong class="text-primary" id="detailRevenue"></strong>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <h6><i class="fas fa-clock me-2"></i>Thông tin thời gian</h6>
-                        <div class="small">
-                            <div class="d-flex justify-content-between py-1">
-                                <span>Tạo lúc:</span>
-                                <strong id="detailCreatedAt"></strong>
-                            </div>
-                            <div class="d-flex justify-content-between py-1">
-                                <span>Cập nhật:</span>
-                                <strong id="detailUpdatedAt"></strong>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                <button type="button" class="btn btn-warning" id="editFromDetailBtn">
-                    <i class="fas fa-edit me-2"></i>Chỉnh sửa
-                </button>
-                <button type="button" class="btn btn-info" onclick="viewTicketSales()">
-                    <i class="fas fa-chart-bar me-2"></i>Xem chi tiết bán vé
-                </button>
-            </div>
-        </div>
-    </div>
+    aria-hidden="true">
+   <div class="modal-dialog modal-lg">
+       <div class="modal-content">
+           <div class="modal-header">
+               <h5 class="modal-title" id="ticketDetailModalLabel">
+                   <i class="fas fa-eye me-2"></i>Chi tiết loại vé
+               </h5>
+               <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                       aria-label="Close"></button>
+           </div>
+           <div class="modal-body">
+               <div class="row g-4">
+                   <div class="col-md-6">
+                       <div class="card border-0 bg-light">
+                           <div class="card-body text-center">
+                               <i class="fas fa-ticket-alt fa-3x text-primary mb-3"></i>
+                               <h5 id="detailTicketName"></h5>
+                               <span class="status-badge" id="detailTicketStatus"></span>
+                           </div>
+                       </div>
+                   </div>
+                   <div class="col-md-6">
+                       <div class="card border-0 bg-light">
+                           <div class="card-body">
+                               <div class="row g-3">
+                                   <div class="col-6">
+                                       <div class="text-center">
+                                           <h4 class="text-success mb-0" id="detailTicketPrice"></h4>
+                                           <small class="text-muted">VNĐ</small>
+                                       </div>
+                                   </div>
+                                   <div class="col-6">
+                                       <div class="text-center">
+                                           <h4 class="text-info mb-0" id="detailTicketQuantity"></h4>
+                                           <small class="text-muted">Đã bán/Tổng</small>
+                                       </div>
+                                   </div>
+                               </div>
+                           </div>
+                       </div>
+                   </div>
+                   <div class="col-12">
+                       <h6><i class="fas fa-align-left me-2"></i>Mô tả</h6>
+                       <p class="text-muted" id="detailTicketDescription"></p>
+                   </div>
+                   <div class="col-md-6">
+                       <h6><i class="fas fa-chart-line me-2"></i>Thống kê bán vé</h6>
+                       <div class="small">
+                           <div class="d-flex justify-content-between py-1">
+                               <span>Đã bán:</span>
+                               <strong id="detailSoldCount"></strong>
+                           </div>
+                           <div class="d-flex justify-content-between py-1">
+                               <span>Còn lại:</span>
+                               <strong id="detailRemainingCount"></strong>
+                           </div>
+                           <div class="d-flex justify-content-between py-1">
+                               <span>Tỷ lệ bán:</span>
+                               <strong class="text-success" id="detailSaleRate"></strong>
+                           </div>
+                           <div class="d-flex justify-content-between py-1">
+                               <span>Doanh thu:</span>
+                               <strong class="text-primary" id="detailRevenue"></strong>
+                           </div>
+                       </div>
+                   </div>
+                   <div class="col-md-6">
+                       <h6><i class="fas fa-clock me-2"></i>Thông tin thời gian</h6>
+                       <div class="small">
+                           <div class="d-flex justify-content-between py-1">
+                               <span>Tạo lúc:</span>
+                               <strong id="detailCreatedAt"></strong>
+                           </div>
+                           <div class="d-flex justify-content-between py-1">
+                               <span>Cập nhật:</span>
+                               <strong id="detailUpdatedAt"></strong>
+                           </div>
+                       </div>
+                   </div>
+               </div>
+           </div>
+           <div class="modal-footer">
+               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+               <button type="button" class="btn btn-warning" id="editFromDetailBtn">
+                   <i class="fas fa-edit me-2"></i>Chỉnh sửa
+               </button>
+               <button type="button" class="btn btn-info" onclick="viewTicketSales()">
+                   <i class="fas fa-chart-bar me-2"></i>Xem chi tiết bán vé
+               </button>
+           </div>
+       </div>
+   </div>
 </div>
 
+
 <script>
-    async function deleteTicketType(ticketTypeId) {
-        if (!confirm("Bạn có chắc muốn xoá loại vé này?")) return;
+   async function deleteTicketType(ticketTypeId) {
+       if (!confirm("Bạn có chắc muốn xoá loại vé này?")) return;
 
-        let res = await fetch(`/events/ticket-types/${ticketTypeId}/delete`, {
-            method: "DELETE"
-        });
 
-        if (res.ok) {
-            let data = await res.json();
-            alert(data.message || "Xoá thành công");
-            location.reload();
-        } else {
-            let data = await res.json();
-            alert("Lỗi: " + (data.error || "Không thể xoá"));
-        }
-    }
+       let res = await fetch(`/events/ticket-types/${ticketTypeId}/delete`, {
+           method: "DELETE"
+       });
+
+
+       if (res.ok) {
+           let data = await res.json();
+           alert(data.message || "Xoá thành công");
+           location.reload();
+       } else {
+           let data = await res.json();
+           alert("Lỗi: " + (data.error || "Không thể xoá"));
+       }
+   }
 </script>
 {% endblock %}
