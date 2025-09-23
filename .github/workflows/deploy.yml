@@ -31,7 +31,28 @@ jobs:
           pip install --upgrade pip
           pip install -r easyticket/requirements.txt
 
-      # # 4. Run tests (thêm PYTHONPATH để nhận ra easyticket)
+      # 4. Generate .env file from GitHub Secrets
+      - name: Generate .env file
+        run: |
+          echo "VNP_TMNCODE=${{ secrets.VNP_TMNCODE }}" >> easyticket/.env
+          echo "VNP_HASHSECRET=${{ secrets.VNP_HASHSECRET }}" >> easyticket/.env
+          echo "VNP_URL=${{ secrets.VNP_URL }}" >> easyticket/.env
+          echo "VNP_RETURNURL=${{ secrets.VNP_RETURNURL }}" >> easyticket/.env
+          echo "VNP_IPNURL=${{ secrets.VNP_IPNURL }}" >> easyticket/.env
+          echo "VNP_VERSION=${{ secrets.VNP_VERSION }}" >> easyticket/.env
+          echo "VNP_COMMAND=${{ secrets.VNP_COMMAND }}" >> easyticket/.env
+          echo "MOMO_PARTNER_CODE=${{ secrets.MOMO_PARTNER_CODE }}" >> easyticket/.env
+          echo "MOMO_ACCESS_KEY=${{ secrets.MOMO_ACCESS_KEY }}" >> easyticket/.env
+          echo "MOMO_SECRET_KEY=${{ secrets.MOMO_SECRET_KEY }}" >> easyticket/.env
+          echo "MOMO_REDIRECT_URL=${{ secrets.MOMO_REDIRECT_URL }}" >> easyticket/.env
+          echo "MOMO_IPN_URL=${{ secrets.MOMO_IPN_URL }}" >> easyticket/.env
+          echo "MOMO_ENDPOINT=${{ secrets.MOMO_ENDPOINT }}" >> easyticket/.env
+          echo "MOMO_REQUEST_TYPE=${{ secrets.MOMO_REQUEST_TYPE }}" >> easyticket/.env
+          echo "CLOUD_NAME=${{ secrets.CLOUD_NAME }}" >> easyticket/.env
+          echo "API_KEY=${{ secrets.API_KEY }}" >> easyticket/.env
+          echo "API_SECRET=${{ secrets.API_SECRET }}" >> easyticket/.env
+
+      # 5. Run tests (giữ lại nhưng comment để dễ bật lại khi cần)
       # - name: Run Unit Tests
       #   run: |
       #     PYTHONPATH=easyticket pytest easyticket/app/tests/unittest --maxfail=3 --disable-warnings -q --cov=easyticket
@@ -44,14 +65,13 @@ jobs:
       #   run: |
       #     PYTHONPATH=easyticket pytest easyticket/app/tests/acceptance_test --maxfail=3 --disable-warnings -q
 
-
-      # 5. Build Docker image
+      # 6. Build Docker image (có .env trong context)
       - name: Build Docker image
         run: |
           docker build -t $IMAGE_NAME:${{ github.run_number }} easyticket
           docker tag $IMAGE_NAME:${{ github.run_number }} $IMAGE_NAME:latest
 
-      # 6. Login & Push Docker Hub
+      # 7. Login & Push Docker Hub
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
@@ -63,7 +83,7 @@ jobs:
           docker push $IMAGE_NAME:${{ github.run_number }}
           docker push $IMAGE_NAME:latest
 
-      # 7. Trigger Render Deploy
+      # 8. Trigger Render Deploy
       - name: Trigger Render Deploy
         run: |
           curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
