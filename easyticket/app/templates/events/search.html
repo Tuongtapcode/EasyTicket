@@ -2,10 +2,6 @@
 {% block content %}
 <section class="py-4">
   <div class="container">
-    <form method="get" class="mb-3 d-flex gap-2">
-      <input class="form-control" name="q" value="{{ q }}" placeholder="Tìm theo tên/mô tả/địa điểm">
-      <button class="btn btn-primary"><i class="fas fa-search me-1"></i>Tìm</button>
-    </form>
 
     <div class="row g-3">
       {% if page_obj.items|length == 0 %}
@@ -15,8 +11,8 @@
       {% for e in page_obj.items %}
         <div class="col-lg-4 col-md-6">
           <div class="card h-100">
-            <img src="{{ e.banner_image or url_for('static','img/event-placeholder.jpg') }}"
-                 class="card-img-top" style="height:160px;object-fit:cover;">
+            <img src="{{ e.banner_image or url_for('static', filename='img/event-placeholder.jpg') }}"
+     class="card-img-top" style="height:160px;object-fit:cover;">
             <div class="card-body">
               <h5 class="card-title">{{ e.name }}</h5>
               <div class="small text-muted mb-1">
