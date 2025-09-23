@@ -1,9 +1,7 @@
-from datetime import datetime
-
 from app.models import db, Event, EventStatus, EventType, TicketType
-from app.models import db, Event
 from sqlalchemy import or_, func
-
+from sqlalchemy.orm import joinedload
+from datetime import datetime
 
 # Lay het
 def get_all_events(page: int =1, per_page: int = 12):

@@ -1,6 +1,5 @@
 from decimal import Decimal
-from app import db
-from app.models import Payment, PaymentStatus, PaymentMethod
+from app.models import db, Payment, PaymentStatus, PaymentMethod
 
 
 def create_payment(order_id: int, amount: int, method: PaymentMethod = PaymentMethod.DIGITAL_WALLET) -> Payment:
