@@ -1,6 +1,7 @@
 # app/admin.py
+import flask
 from flask import redirect, url_for, request, render_template,flash
-from flask_login import current_user
+from flask_login import current_user, logout_user
 from flask_admin import Admin, BaseView, expose, AdminIndexView
 from flask_admin.contrib.sqla import ModelView
 from app.models import *
@@ -11,11 +12,38 @@ from datetime import datetime, timedelta
 # Chỉ cho phép user role=ADMIN vào Admin
 class SecureModelView(ModelView):
     def is_accessible(self):
-        return current_user.is_authenticated and getattr(current_user, "role", "") == "ADMIN"
+        if current_user.is_authenticated and current_user.user_role.value == "ADMIN":
+            return True
+        else:
+            flash("Bạn không có quyền truy cập trang này!", "danger")
+            return False
+
+    #Callback khi is_accessible la false
+    def inaccessible_callback(self, name, **kwargs):
+        return redirect(url_for("auth.forbidden", next=request.url))
+
+
+class CustomAdminIndexView(AdminIndexView):
+    @expose('/')
+    def index(self):
+        if not self.is_accessible():
+            flash("Bạn không có quyền truy cập trang này!", "danger")
+            return self.inaccessible_callback("auth.login")
+
+        return self.render('admin/index.html')
+    def is_accessible(self):
+        return current_user.is_authenticated and current_user.user_role.value == "ADMIN"
 
     def inaccessible_callback(self, name, **kwargs):
-        return redirect(url_for("auth.login", next=request.url))
+        return redirect(url_for("auth.forbidden", next=request.url))
 
+#Logout
+class Logout(BaseView):
+    @expose('/')
+    def index(self):
+        if current_user.is_authenticated:
+            logout_user()
+        return redirect(url_for('auth.login'))
 
 class StatsView(BaseView):
     @expose('/')
@@ -136,24 +164,42 @@ class StatsView(BaseView):
 
     def inaccessible_callback(self, name, **kwargs):
         flash('Bạn không có quyền truy cập trang này.', 'error')
-        return redirect(url_for('auth.login', next=request.url))
+        return redirect(url_for('auth.forbidden', next=request.url))
 
 
-class UserView(ModelView):
+class UserView(SecureModelView):
     can_view_details = True
     edit_modal = True
     details_modal = True
     column_exclude_list = ['password','avatar']
     column_filters = ['username', 'email','phone']
 
-class EventView(ModelView):
+class EventView(SecureModelView):
     can_view_details = True
     edit_modal = True
     details_modal = True
     can_view_details_modal = True
     column_exclude_list = ['banner_image']
+    column_editable_list = ['status'] #Chỉnh trực tiếp
+    form_excluded_columns = ['ticket_types','tickets','banner_image','updated_at','created_at','published_at']
 
-admin.add_view(UserView(User, db.session))
-admin.add_view(EventView(Event, db.session, endpoint="admin_events", url="/admin/events" ))
-admin.add_view(StatsView(name="Thống kê", endpoint="stats", url="/admin/stats"))
+class EventTypeView(SecureModelView):
+    edit_modal = True
+    details_modal = True
+    can_view_details_modal = True
+    form_excluded_columns =['events']
+
+class CategoryView(SecureModelView):
+    edit_modal = True
+    details_modal = True
+    can_view_details_modal = True
+    form_excluded_columns = ['ticket_types']
+
+def init_admin(admin, db_session):
+    admin.add_view(UserView(User, db.session))
+    admin.add_view(EventView(Event, db.session,name="Sự kiện", endpoint="admin_events", url="/admin/events" ))
+    admin.add_view(EventTypeView(EventType, db.session,name="Loại sự kiện", endpoint="admin_event_types", url="/admin/event_types" ))
+    admin.add_view(CategoryView(Category, db.session,name="Thể loại sự kiện", endpoint="admin_categories", url="/admin/categories" ))
+    admin.add_view(StatsView(name="Thống kê", endpoint="stats", url="/admin/stats"))
+    admin.add_view(Logout(name="Đăng xuất",endpoint="logout",url="/admin/logout"))
 

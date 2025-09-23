@@ -8,9 +8,9 @@ from app.dao.event_dao import get_event_by_id
 from app.dao.ticket_dao import get_ticket_type_by_event_id, count_sold_by_ticket_type
 from app.dao.ticket_type_dao import get_ticket_types_by_event
 from app.forms import EventForm, TicketTypeForm
-from app.models import db, TicketType
-from app.models import Event
-from app import dao
+from app import db, dao
+from app.models import Event, EventType, Category, TicketType
+from app.services.cloudinary_service import CloudinaryService
 
 events_bp = Blueprint("event", __name__, url_prefix="/events")
 
@@ -34,16 +34,64 @@ def event_details(event_id: int):
 
     return render_template("events/detail.html", event=event, ticket_types=ticket_types)
 
+def _parse_date(s: str | None):
+    if not s: return None
+    try:
+        # nhận 'YYYY-MM-DD' hoặc full ISO
+        return datetime.fromisoformat(s)
+    except Exception:
+        try:
+            return datetime.strptime(s, "%Y-%m-%d")
+        except Exception:
+            return None
 
 @events_bp.route("/search")
 def search():
-    q = request.args.get("q", "")
+    q = request.args.get("q", "").strip()
     page = request.args.get("page", 1, type=int)
     event_type_id = request.args.get("event_type_id", type=int)
+    category_id = request.args.get("category_id", type=int)
+    start_date = _parse_date(request.args.get("start_date"))
+    end_date = _parse_date(request.args.get("end_date"))
+    location = request.args.get("location") or None
+    order_by = request.args.get("order_by", "newest")
 
-    page_obj = search_events(q=q, page=page, per_page=12, event_type_id=event_type_id)
+    is_free_param = request.args.get("is_free")  # "1" | "0" | None
+    is_free = None
+    if is_free_param == "1":
+        is_free = True
+    elif is_free_param == "0":
+        is_free = False
 
-    return render_template("events/search.html", page_obj=page_obj, q=q, selected_event_type_id=event_type_id)
+    page_obj = search_events(
+        q=q,
+        page=page, per_page=12,
+        event_type_id=event_type_id,
+        category_id=category_id,
+        start_date=start_date,
+        end_date=end_date,
+        location=location,
+        is_free=is_free,
+        order_by=order_by
+    )
+
+    events_type = EventType.query.filter_by(active=True).order_by(EventType.name.asc()).all()
+    categories = Category.query.filter_by(active=True).order_by(Category.name.asc()).all()
+
+    return render_template(
+        "events/search.html",
+        page_obj=page_obj,
+        q=q,
+        events_type=events_type,
+        categories=categories,
+        selected_event_type_id=event_type_id,
+        selected_category_id=category_id,
+        start_date=start_date.isoformat() if start_date else "",
+        end_date=end_date.isoformat() if end_date else "",
+        location=location or "",
+        is_free=("1" if is_free is True else ("0" if is_free is False else "")),
+        order_by=order_by
+    )
 
 
 # Create Event - ORGANIZER
@@ -58,6 +106,14 @@ def create_event():
     form.set_choices()
 
     if form.validate_on_submit():
+        uploaded_url = None
+        file = form.banner_image.data
+        if file and getattr(file, "filename", ""):
+            cloud_service = CloudinaryService()
+            uploaded_result = cloud_service.upload(file)
+            if uploaded_result:
+                uploaded_url = uploaded_result["url"]
+
         new_event = Event(
             organizer_id=current_user.id,
             name=form.name.data,
@@ -67,7 +123,7 @@ def create_event():
             start_datetime=form.start_datetime.data,
             end_datetime=form.end_datetime.data,
             address=form.address.data,
-            banner_image=form.banner_image.data or None,
+            banner_image=uploaded_url,
             created_at=datetime.now(),
             updated_at=datetime.now()
         )

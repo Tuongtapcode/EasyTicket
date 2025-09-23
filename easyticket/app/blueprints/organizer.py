@@ -1,4 +1,8 @@
 from flask_login import current_user, login_required
+from flask import (
+    render_template, request, jsonify,
+    flash, redirect, url_for, abort
+)
 
 from flask import render_template, abort, Blueprint, request
 
@@ -30,5 +34,20 @@ def dashboard():
         status=status,
         keyword=keyword
     )
+
+@organizer_bp.route("/events/<int:event_id>/scan")
+@login_required
+def scan_qr_view(event_id:int):
+    # chỉ organizer của event (hoặc admin) mới có quyền
+    from app.dao.event_dao import get_event_by_id
+    event = get_event_by_id(event_id)
+    if not event:
+        abort(404)
+    # kiểm tra quyền: organizer hoặc admin
+    if current_user.user_role.name != "ORGANIZER" or event.organizer_id != current_user.id:
+        flash("Bạn không có quyền truy cập trang quét QR này.", "danger")
+        return redirect(url_for("organizer.dashboard"))
+    return render_template("organizer/scan_qr.html", event=event)
+
 
 

@@ -17,16 +17,20 @@ migrate = Migrate()
 admin = Admin(name="EasyTicket Admin", template_mode="bootstrap4")
 babel = Babel()
 
-def _default_db_uri():
-    RAILWAY_USER = os.getenv("DB_USER", "root")
-    RAILWAY_PASSWORD = os.getenv("DB_PASSWORD", "KYrheRlKRriAUqwhMBcJFlxlItWEMPMB")
-    RAILWAY_HOST = os.getenv("DB_HOST", "shinkansen.proxy.rlwy.net")
-    RAILWAY_PORT = int(os.getenv("DB_PORT", 27884))
-    RAILWAY_DB   = os.getenv("DB_NAME", "railway")
+
+RAILWAY_USER = os.getenv("DB_USER", "root")
+RAILWAY_PASSWORD = os.getenv("DB_PASSWORD", "tLZxofCVyJIatBeoVLrEWbJjCCOwqgrg")
+RAILWAY_HOST = os.getenv("DB_HOST", "centerbeam.proxy.rlwy.net")
+RAILWAY_PORT = int(os.getenv("DB_PORT", 46411))
+RAILWAY_DB   = os.getenv("DB_NAME", "railway")
+
+def _default_db_uri() -> str:
+    pwd = quote(RAILWAY_PASSWORD)
     return (
-        f"mysql+pymysql://{RAILWAY_USER}:{quote(RAILWAY_PASSWORD)}@"
-        f"{RAILWAY_HOST}:{RAILWAY_PORT}/{RAILWAY_DB}?charset=utf8mb4"
+        f"mysql+pymysql://{RAILWAY_USER}:{pwd}@{RAILWAY_HOST}:{RAILWAY_PORT}/"
+        f"{RAILWAY_DB}?charset=utf8mb4"
     )
+
 
 def create_app(test_config: dict | None = None) -> Flask:
     app = Flask(__name__)
@@ -40,6 +44,7 @@ def create_app(test_config: dict | None = None) -> Flask:
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config["QR_SECRET"] = os.getenv("QR_SECRET", "change-this-to-a-long-random-secret")
 
+
     # -------- override khi test --------
     if test_config:
         app.config.update(test_config)
@@ -51,7 +56,12 @@ def create_app(test_config: dict | None = None) -> Flask:
     login_manager.login_view = "auth.login"
     migrate.init_app(app, db)
     babel.init_app(app)
+
+    from app.admin import CustomAdminIndexView, init_admin
+    #Flask_Admin
+    admin.index_view = CustomAdminIndexView(name="Home")
     admin.init_app(app)
+
 
     # import models để Alembic detect
     with app.app_context():
@@ -59,6 +69,8 @@ def create_app(test_config: dict | None = None) -> Flask:
             User, Category, EventType, Event,
             TicketType, Ticket, Order, OrderDetail, Payment
         )
+        # Đăng ký admin views (sau khi models và Admin đã có)
+        init_admin(admin, db.session)
 
     # register blueprints
     from app.blueprints.auth import auth
@@ -69,7 +81,7 @@ def create_app(test_config: dict | None = None) -> Flask:
     from app.blueprints.vnpay import vnpay_bp
     from app.blueprints.momo import bp as momo_bp
     from app.blueprints.qr import qr_bp
-
+    
     app.register_blueprint(auth)
     app.register_blueprint(main)
     app.register_blueprint(events_bp)

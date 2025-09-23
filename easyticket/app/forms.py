@@ -1,8 +1,9 @@
 from flask_wtf import FlaskForm
 from wtforms import (
     StringField, PasswordField, SubmitField, BooleanField, TextAreaField,
-    SelectField, IntegerField, DecimalField, DateTimeField
+    SelectField, IntegerField, DecimalField, DateTimeField,
 )
+from flask_wtf.file import FileField, FileAllowed
 from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError, NumberRange
 
 # Xử lý tương thích DateTimeLocalField
@@ -51,7 +52,9 @@ class EventForm(FlaskForm):
     start_datetime = DateTimeLocalField("Thời gian bắt đầu", format="%Y-%m-%dT%H:%M", validators=[DataRequired()])
     end_datetime = DateTimeLocalField("Thời gian kết thúc", format="%Y-%m-%dT%H:%M", validators=[DataRequired()])
     address = StringField("Địa điểm", validators=[DataRequired(), Length(max=200)])
-    banner_image = StringField("Ảnh banner (URL)", validators=[Length(max=200)])
+    banner_image = FileField("Ảnh banner (URL)", validators=[
+        FileAllowed(["jpg", "jpeg", "png", "gif"], "Chỉ hỗ trợ ảnh JPG, PNG, GIF.")
+    ])
     submit = SubmitField("Tạo sự kiện")
 
     def set_choices(self):

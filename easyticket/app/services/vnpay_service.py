@@ -50,7 +50,7 @@ class VNPayServiceImpl:
 
             """
         if current_user.is_authenticated and order.customer_id != current_user.id:
-            # nếu tắt login để test thì current_user có thể không auth: bỏ qua check này
+            # nếu tắt login để tests thì current_user có thể không auth: bỏ qua check này
             raise AccessDeniedException("Bạn không sở hữu đơn hàng này")
             
             """
