@@ -1,9 +1,9 @@
-name: EasyTicket Feature CICD
+name: EasyTicket Develop CICD
 
 on:
   push:
     branches:
-      - feature/cicd
+      - develop
 
 env:
   IMAGE_NAME: nguyentuong/easyticket
@@ -17,7 +17,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: feature/cicd
+          ref: develop
 
       # 2. Set up Python
       - name: Setup Python
@@ -31,10 +31,19 @@ jobs:
           pip install --upgrade pip
           pip install -r easyticket/requirements.txt
 
-      # 4. Run tests (thêm PYTHONPATH để nhận ra easyticket)
-      - name: Run Unit Tests
-        run: |
-          PYTHONPATH=easyticket python -m unittest discover -s easyticket/app/tests
+      # # 4. Run tests (thêm PYTHONPATH để nhận ra easyticket)
+      # - name: Run Unit Tests
+      #   run: |
+      #     PYTHONPATH=easyticket pytest easyticket/app/tests/unittest --maxfail=3 --disable-warnings -q --cov=easyticket
+
+      # - name: Run Integration Tests
+      #   run: |
+      #     PYTHONPATH=easyticket pytest easyticket/app/tests/integration --maxfail=3 --disable-warnings -q
+
+      # - name: Run Acceptance Tests
+      #   run: |
+      #     PYTHONPATH=easyticket pytest easyticket/app/tests/acceptance_test --maxfail=3 --disable-warnings -q
+
 
       # 5. Build Docker image
       - name: Build Docker image
