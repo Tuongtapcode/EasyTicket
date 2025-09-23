@@ -69,6 +69,10 @@
                    href="{{ url_for('event.event_details', event_id=t.event.id) }}">
                   Xem sự kiện
                 </a>
+                  <a class="btn btn-outline-secondary btn-sm"
+                     href="{{ url_for('order.ticket_detail', ticket_id=t.id) }}">
+                      Xem vé
+                  </a>
                 {% if t.status.name=='ACTIVE' %}
                 <a class="btn btn-primary btn-sm"
                    href="{{ url_for('event.event_details', event_id=t.event.id) }}#use">

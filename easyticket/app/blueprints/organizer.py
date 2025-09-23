@@ -19,6 +19,7 @@ def dashboard():
     status = request.args.get("status")
     keyword = request.args.get("q")
 
+
     events_pagination = event_dao.get_events_by_organizer(
         organizer_id=current_user.id,
         page=page,
