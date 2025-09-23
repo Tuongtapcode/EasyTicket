@@ -53,17 +53,25 @@ def sample_events():
 def test_get_all_events(monkeypatch, sample_events):
     events = [make_event(e) for e in sample_events]
 
+    # Mock desc() của created_at
+    mock_created_at = SimpleNamespace(desc=lambda: "created_at_desc")
+
+    mock_query = SimpleNamespace(
+        order_by=lambda *args, **kwargs: mock_query,
+        paginate=lambda **kwargs: SimpleNamespace(items=events)
+    )
+
     monkeypatch.setattr(
         event_dao,
         "Event",
-        SimpleNamespace(query=SimpleNamespace(all=lambda: events))
+        SimpleNamespace(query=mock_query, created_at=mock_created_at)
     )
 
     result = event_dao.get_all_events()
 
-    assert len(result) == 2
-    assert result[0].name == "Music Night"
-    assert result[1].name == "Python 101"
+    assert len(result.items) == 2
+    assert result.items[0].name == "Music Night"
+    assert result.items[1].name == "Python 101"
 
 
 # ---- Test get_event_by_id ----
@@ -79,12 +87,10 @@ def test_get_event_by_id(monkeypatch, sample_events):
         ))
     )
 
-    # Test event tồn tại
     result = event_dao.get_event_by_id(1)
     assert result.name == "Music Night"
     assert result.status == "PUBLISHED"
 
-    # Test event không tồn tại
     result = event_dao.get_event_by_id(99)
     assert result is None
 
@@ -108,19 +114,16 @@ def test_get_all_event_types(monkeypatch, sample_event_types):
 
 # ---- Test search_events ----
 def test_search_events(monkeypatch, sample_events):
-    # Mock paginate result
     published_events = [make_event(e) for e in sample_events if e["status"] == "PUBLISHED"]
-    mock_paginate = SimpleNamespace(
-        items=published_events,
-        page=1,
-        per_page=12,
-        total=len(published_events)
-    )
+    mock_paginate = SimpleNamespace(items=published_events, page=1, per_page=12, total=len(published_events))
 
-    # Mock query chain
+    # Mock order_by và filter chain
+    mock_created_at = SimpleNamespace(desc=lambda: "created_at_desc", asc=lambda: "created_at_asc")
+    mock_start_datetime = SimpleNamespace(asc=lambda: "start_datetime_asc")
+
     mock_query = SimpleNamespace(
-        filter=lambda x: mock_query,
-        order_by=lambda x: mock_query,
+        filter=lambda *args, **kwargs: mock_query,
+        order_by=lambda *args, **kwargs: mock_query,
         paginate=lambda **kwargs: mock_paginate
     )
 
@@ -132,29 +135,25 @@ def test_search_events(monkeypatch, sample_events):
             status=SimpleNamespace(),
             name=SimpleNamespace(ilike=lambda x: True),
             description=SimpleNamespace(ilike=lambda x: True),
-            address=SimpleNamespace(ilike=lambda x: True)
+            address=SimpleNamespace(ilike=lambda x: True),
+            created_at=mock_created_at,
+            start_datetime=mock_start_datetime
         )
     )
 
-    # Test search với keyword
     result = event_dao.search_events(q="Music")
     assert result.items[0].name == "Music Night"
 
-    # Test search không có keyword
     result = event_dao.search_events(q=None)
-    assert len(result.items) == 1  # chỉ PUBLISHED events
+    assert len(result.items) == 1
 
 
 # ---- Test get_events_by_organizer ----
 def test_get_events_by_organizer(monkeypatch, sample_events):
-    # Events của organizer_id = 10
     organizer_events = [make_event(e) for e in sample_events if e["organizer_id"] == 10]
-    mock_paginate = SimpleNamespace(
-        items=organizer_events,
-        page=1,
-        per_page=10,
-        total=len(organizer_events)
-    )
+    mock_paginate = SimpleNamespace(items=organizer_events, page=1, per_page=10, total=len(organizer_events))
+
+    mock_start_datetime = SimpleNamespace(desc=lambda: "start_datetime_desc")
 
     mock_query = SimpleNamespace(
         filter_by=lambda **kwargs: mock_query,
@@ -166,15 +165,13 @@ def test_get_events_by_organizer(monkeypatch, sample_events):
     monkeypatch.setattr(
         event_dao,
         "Event",
-        SimpleNamespace(query=mock_query)
+        SimpleNamespace(query=mock_query, start_datetime=mock_start_datetime)
     )
 
-    # Test basic
     result = event_dao.get_events_by_organizer(organizer_id=10)
     assert len(result.items) == 1
     assert result.items[0].name == "Music Night"
 
-    # Test với status filter
     result = event_dao.get_events_by_organizer(
         organizer_id=10,
         status=EventStatus.PUBLISHED
@@ -186,14 +183,12 @@ def test_get_events_by_organizer(monkeypatch, sample_events):
 def test_delete_event_by_id(monkeypatch, sample_events):
     e1 = make_event(sample_events[0])
 
-    # Mock get_event_by_id
     monkeypatch.setattr(
         event_dao,
         "get_event_by_id",
         lambda _id: e1 if _id == 1 else None
     )
 
-    # Mock db.session
     class FakeSession:
         def __init__(self):
             self.deleted = None
@@ -212,13 +207,11 @@ def test_delete_event_by_id(monkeypatch, sample_events):
     fake_session = FakeSession()
     monkeypatch.setattr(event_dao.db, "session", fake_session)
 
-    # Test delete thành công
     result = event_dao.delete_event_by_id(1)
     assert result is True
     assert fake_session.deleted == e1
     assert fake_session.committed is True
 
-    # Test delete event không tồn tại
     result = event_dao.delete_event_by_id(99)
     assert result is False
 
@@ -232,7 +225,6 @@ def test_delete_event_by_id_exception(monkeypatch, sample_events):
         lambda _id: e1 if _id == 1 else None
     )
 
-    # Mock session with exception
     class FakeSessionWithError:
         def delete(self, obj):
             raise Exception("Database error")
