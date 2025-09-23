@@ -1,4 +1,5 @@
 # app/__init__.py
+
 from flask import Flask
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
@@ -9,20 +10,21 @@ from flask_admin import Admin
 from flask_babel import Babel
 import os
 
-# ---- lazy init extensions ----
+# Khởi tạo extensions
 db = SQLAlchemy()
 bcrypt = Bcrypt()
 login_manager = LoginManager()
 migrate = Migrate()
-admin = Admin(name="EasyTicket Admin", template_mode="bootstrap4")
 babel = Babel()
+# Nhớ đổi tên instance để flask đỡ nhầm
+admin_instance = Admin(name="EasyTicket Admin", template_mode="bootstrap4")
 
-
+# Cấu hình database
 RAILWAY_USER = os.getenv("DB_USER", "root")
 RAILWAY_PASSWORD = os.getenv("DB_PASSWORD", "tLZxofCVyJIatBeoVLrEWbJjCCOwqgrg")
 RAILWAY_HOST = os.getenv("DB_HOST", "centerbeam.proxy.rlwy.net")
 RAILWAY_PORT = int(os.getenv("DB_PORT", 46411))
-RAILWAY_DB   = os.getenv("DB_NAME", "railway")
+RAILWAY_DB = os.getenv("DB_NAME", "railway")
 
 def _default_db_uri() -> str:
     pwd = quote(RAILWAY_PASSWORD)
@@ -31,25 +33,24 @@ def _default_db_uri() -> str:
         f"{RAILWAY_DB}?charset=utf8mb4"
     )
 
-
-def create_app(test_config: dict | None = None) -> Flask:
+# Hàm Factory để tạo app
+def create_app(test_config=None):
     app = Flask(__name__)
 
-    # -------- default config --------
-    app.secret_key = os.getenv("SECRET_KEY", "dev-secret-change-me")
-    app.config["BABEL_DEFAULT_LOCALE"] = "en"
-    app.config["BABEL_DEFAULT_TIMEZONE"] = "Asia/Ho_Chi_Minh"
-
-    app.config.setdefault("SQLALCHEMY_DATABASE_URI", _default_db_uri())
-    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-    app.config["QR_SECRET"] = os.getenv("QR_SECRET", "change-this-to-a-long-random-secret")
-
-
-    # -------- override khi test --------
+    # Cấu hình app
     if test_config:
-        app.config.update(test_config)
+        app.config.from_mapping(test_config)
+    else:
+        app.config.from_mapping(
+            SECRET_KEY=os.getenv("SECRET_KEY", "dev-secret-change-me"),
+            BABEL_DEFAULT_LOCALE="en",
+            BABEL_DEFAULT_TIMEZONE="Asia/Ho_Chi_Minh",
+            SQLALCHEMY_DATABASE_URI=_default_db_uri(),
+            SQLALCHEMY_TRACK_MODIFICATIONS=False,
+            QR_SECRET=os.getenv("QR_SECRET", "change-this-to-a-long-random-secret")
+        )
 
-    # -------- init extensions --------
+    # Khởi tạo extensions với app
     db.init_app(app)
     bcrypt.init_app(app)
     login_manager.init_app(app)
@@ -57,22 +58,16 @@ def create_app(test_config: dict | None = None) -> Flask:
     migrate.init_app(app, db)
     babel.init_app(app)
 
-    from app.admin import CustomAdminIndexView, init_admin
-    #Flask_Admin
-    admin.index_view = CustomAdminIndexView(name="Home")
-    admin.init_app(app)
-
-
-    # import models để Alembic detect
+    # Đăng ký admin views
     with app.app_context():
-        from app.models import (
-            User, Category, EventType, Event,
-            TicketType, Ticket, Order, OrderDetail, Payment
-        )
-        # Đăng ký admin views (sau khi models và Admin đã có)
-        init_admin(admin, db.session)
+        from app.admin import init_admin
+        # Truyền đối tượng admin và db.session vào hàm init_admin
+        init_admin(admin_instance, db.session)
 
-    # register blueprints
+    #Gắn đối tượng admin đã có các views vào ứng dụng Flask
+    admin_instance.init_app(app)
+
+    # Đăng ký blueprints
     from app.blueprints.auth import auth
     from app.blueprints.main import main
     from app.blueprints.event import events_bp
@@ -81,7 +76,7 @@ def create_app(test_config: dict | None = None) -> Flask:
     from app.blueprints.vnpay import vnpay_bp
     from app.blueprints.momo import bp as momo_bp
     from app.blueprints.qr import qr_bp
-    
+
     app.register_blueprint(auth)
     app.register_blueprint(main)
     app.register_blueprint(events_bp)
@@ -91,6 +86,7 @@ def create_app(test_config: dict | None = None) -> Flask:
     app.register_blueprint(momo_bp)
     app.register_blueprint(qr_bp)
 
+    #  User loader
     @login_manager.user_loader
     def load_user(user_id: str):
         from app.models import User
@@ -98,5 +94,5 @@ def create_app(test_config: dict | None = None) -> Flask:
 
     return app
 
-# giữ app = create_app() cho Flask run bình thường
+#Tạo một instance app mặc định để các file khác có thể import
 app = create_app()

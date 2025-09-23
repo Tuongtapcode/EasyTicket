@@ -195,11 +195,11 @@ class CategoryView(SecureModelView):
     can_view_details_modal = True
     form_excluded_columns = ['ticket_types']
 
-def init_admin(admin, db_session):
-    admin.add_view(UserView(User, db.session))
-    admin.add_view(EventView(Event, db.session,name="Sự kiện", endpoint="admin_events", url="/admin/events" ))
-    admin.add_view(EventTypeView(EventType, db.session,name="Loại sự kiện", endpoint="admin_event_types", url="/admin/event_types" ))
-    admin.add_view(CategoryView(Category, db.session,name="Thể loại sự kiện", endpoint="admin_categories", url="/admin/categories" ))
-    admin.add_view(StatsView(name="Thống kê", endpoint="stats", url="/admin/stats"))
-    admin.add_view(Logout(name="Đăng xuất",endpoint="logout",url="/admin/logout"))
+def init_admin(admin_instance, db_session):
+    admin_instance.add_view(UserView(User, db.session))
+    admin_instance.add_view(EventView(Event, db.session,name="Sự kiện", endpoint="admin_events", url="/admin/events" ))
+    admin_instance.add_view(EventTypeView(EventType, db.session,name="Loại sự kiện", endpoint="admin_event_types", url="/admin/event_types" ))
+    admin_instance.add_view(CategoryView(Category, db.session,name="Thể loại sự kiện", endpoint="admin_categories", url="/admin/categories" ))
+    admin_instance.add_view(StatsView(name="Thống kê", endpoint="stats", url="/admin/stats"))
+    admin_instance.add_view(Logout(name="Đăng xuất",endpoint="logout",url="/admin/logout"))
 
