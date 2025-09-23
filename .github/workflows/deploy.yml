@@ -1,0 +1,69 @@
+name: EasyTicket Develop CICD
+
+on:
+  push:
+    branches:
+      - develop
+
+env:
+  IMAGE_NAME: nguyentuong/easyticket
+
+jobs:
+  build-test-deploy:
+    runs-on: ubuntu-22.04
+
+    steps:
+      # 1. Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: develop
+
+      # 2. Set up Python
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # 3. Install dependencies
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r easyticket/requirements.txt
+
+      # # 4. Run tests (thêm PYTHONPATH để nhận ra easyticket)
+      # - name: Run Unit Tests
+      #   run: |
+      #     PYTHONPATH=easyticket pytest easyticket/app/tests/unittest --maxfail=3 --disable-warnings -q --cov=easyticket
+
+      # - name: Run Integration Tests
+      #   run: |
+      #     PYTHONPATH=easyticket pytest easyticket/app/tests/integration --maxfail=3 --disable-warnings -q
+
+      # - name: Run Acceptance Tests
+      #   run: |
+      #     PYTHONPATH=easyticket pytest easyticket/app/tests/acceptance_test --maxfail=3 --disable-warnings -q
+
+
+      # 5. Build Docker image
+      - name: Build Docker image
+        run: |
+          docker build -t $IMAGE_NAME:${{ github.run_number }} easyticket
+          docker tag $IMAGE_NAME:${{ github.run_number }} $IMAGE_NAME:latest
+
+      # 6. Login & Push Docker Hub
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      - name: Push Docker image
+        run: |
+          docker push $IMAGE_NAME:${{ github.run_number }}
+          docker push $IMAGE_NAME:latest
+
+      # 7. Trigger Render Deploy
+      - name: Trigger Render Deploy
+        run: |
+          curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
