@@ -4,7 +4,7 @@ from app.dao import event_dao
 from app.models import EventStatus
 
 
-# ---- Helper: biến dict thành object giả ----
+# ---- Helper ----
 def make_event(obj: dict):
     return SimpleNamespace(**obj)
 
@@ -53,7 +53,6 @@ def sample_events():
 def test_get_all_events(monkeypatch, sample_events):
     events = [make_event(e) for e in sample_events]
 
-    # Mock desc() của created_at
     mock_created_at = SimpleNamespace(desc=lambda: "created_at_desc")
 
     mock_query = SimpleNamespace(
@@ -117,7 +116,6 @@ def test_search_events(monkeypatch, sample_events):
     published_events = [make_event(e) for e in sample_events if e["status"] == "PUBLISHED"]
     mock_paginate = SimpleNamespace(items=published_events, page=1, per_page=12, total=len(published_events))
 
-    # Mock order_by và filter chain
     mock_created_at = SimpleNamespace(desc=lambda: "created_at_desc", asc=lambda: "created_at_asc")
     mock_start_datetime = SimpleNamespace(asc=lambda: "start_datetime_asc")
 
@@ -165,7 +163,11 @@ def test_get_events_by_organizer(monkeypatch, sample_events):
     monkeypatch.setattr(
         event_dao,
         "Event",
-        SimpleNamespace(query=mock_query, start_datetime=mock_start_datetime)
+        SimpleNamespace(
+            query=mock_query,
+            start_datetime=mock_start_datetime,
+            status="PUBLISHED"   # FIX lỗi thiếu thuộc tính status
+        )
     )
 
     result = event_dao.get_events_by_organizer(organizer_id=10)
@@ -226,6 +228,9 @@ def test_delete_event_by_id_exception(monkeypatch, sample_events):
     )
 
     class FakeSessionWithError:
+        def __init__(self):
+            self.rolled_back = False
+
         def delete(self, obj):
             raise Exception("Database error")
 

@@ -2,9 +2,12 @@ import pytest
 from app import create_app, db
 from app.models import User, Category, EventType, Event, TicketType, Ticket
 from werkzeug.security import generate_password_hash
-from datetime import datetime, timedelta, timezone  # ← Thêm timezone
+from app.models import TicketStatus
+from datetime import datetime, timedelta, timezone
+from app.models import EventStatus
 
-@pytest.fixture(scope="function")  # ← THAY ĐỔI TỪ "session" THÀNH "function"
+
+@pytest.fixture(scope="function")
 def app():
     """Create a new Flask app for each test"""
     app = create_app({
@@ -67,7 +70,7 @@ def seed_minimal(db_session):
         organizer_id=organizer.id,
         name="Private Show Vũ.",
         description="Show thử nghiệm",
-        status="PUBLISHED",
+        status=EventStatus.PUBLISHED,
         event_type_id=et.id,
         category_id=cat.id,
         start_datetime=datetime.now(timezone.utc)+timedelta(days=1),  # ← Fix warning
@@ -88,7 +91,7 @@ def seed_minimal(db_session):
         price=300000,
         active=True,
         created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc)
+updated_at=datetime.now(timezone.utc)
     )
     db_session.add(tt)
     db_session.flush()
@@ -98,7 +101,7 @@ def seed_minimal(db_session):
         event_id=ev.id,
         ticket_type_id=tt.id,
         ticket_code="TKT-TEST-001",
-        status="ACTIVE",
+        status=TicketStatus.ACTIVE,
         created_at=datetime.now(timezone.utc),
         updated_at=datetime.now(timezone.utc),
         issued_at=datetime.now(timezone.utc),
@@ -107,8 +110,6 @@ def seed_minimal(db_session):
     db_session.add(tk)
     db_session.flush()  # Flush để có tk.id
 
-    # Tạo qr_data với format 3 phần: ticket_id:event_id:timestamp
-    tk.qr_data = f"{tk.id}:{ev.id}:{int(datetime.now(timezone.utc).timestamp())}"
     db_session.commit()
 
     yield {"organizer": organizer, "buyer": buyer, "event": ev, "ticket": tk}
