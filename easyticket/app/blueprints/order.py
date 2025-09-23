@@ -1,6 +1,9 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
-from flask import Blueprint, request, redirect, url_for, render_template, flash, abort
+from io import BytesIO
+
+import qrcode
+from flask import Blueprint, request, redirect, url_for, render_template, flash, abort, send_file
 from flask_login import login_required
 from sqlalchemy.orm import joinedload
 from app import db
@@ -33,7 +36,10 @@ def _gen_ticket_code():
 @orders_bp.route("/create", methods=["POST"])
 def create():
     # Lưu ý: nếu dùng Flask-Login thì thay current_user.id
-    customer_id = request.form.get("current_user.id", 2, type=int)  # tạm
+    if not current_user.is_authenticated:
+        flash("Vui lòng đăng nhập trước!.", "warning")
+        return redirect(url_for("auth.login"))
+    customer_id = current_user.id
     event_id = request.form.get("event_id", type=int)
 
     # Parse items[<ticket_type_id>] = qty
@@ -172,7 +178,15 @@ def pay(order_id):
 # ========== 4) Trang thành công + danh sách vé ==========
 @orders_bp.route("/<int:order_id>/success")
 def success(order_id):
-    tickets = db.session.query(Ticket).filter(Ticket.order_id == order_id).all()
+    tickets = (
+        db.session.query(Ticket)
+        .filter(Ticket.order_id == order_id)
+        .options(
+            joinedload(Ticket.event),
+            joinedload(Ticket.ticket_type)
+        )
+        .all()
+    )
     if tickets is None:
         abort(404)
     return render_template("order/success.html", tickets=tickets)
@@ -243,7 +257,7 @@ def my_tickets():
     page = request.args.get("page", 1, type=int)
 
     page_obj = get_tickets_of_user(
-        user_id=current_user.id, status=status, q=q, page=page, per_page=12
+        user_id=current_user.id, status=status, q=q, page=page, per_page=6
     )
 
     return render_template("order/my_tickets.html",
@@ -253,8 +267,22 @@ def my_tickets():
 def momo_return():
     svc = MoMoService()
     info = svc.verifyReturn(request.args.to_dict())
-
-    status = "SUCCESS" if info["ok"] and str(info["resultCode"]) == "0" else "FAILED"
+    MoMoService().processIPN(request.args.to_dict())
+    tickets = []
+    if info["ok"] and str(info["resultCode"]) == "00":
+        _issue_tickets(int(info["orderId"]))
+        tickets = (
+            db.session.query(Ticket)
+            .filter(Ticket.order_id == int(info["orderId"]))
+            .options(
+                joinedload(Ticket.event),
+                joinedload(Ticket.ticket_type)
+            )
+            .all()
+        )
+        status = "SUCCESS"
+    else:
+        status = "FAILED"
     return render_template(
         "payment/payment_return.html",
         status=status,
@@ -264,12 +292,28 @@ def momo_return():
         transId=info["transId"],
         message=info["message"],
         resultCode=info["resultCode"],
+        tickets=tickets
     ), (200 if status=="SUCCESS" else 400)
 
 @orders_bp.route("/payment/vnpay/return")
 def vnpay_return():
     info = VNPayServiceImpl.verifyReturn(request.args.to_dict())
-    status = "SUCCESS" if info["ok"] and str(info["resultCode"]) == "00" else "FAILED"
+    VNPayServiceImpl().processReturnUrl(request.args.to_dict())#Gọi để cập nhật db
+    tickets = []
+    if info["ok"] and str(info["resultCode"]) == "00":
+        _issue_tickets(int(info["orderId"]))
+        tickets = (
+            db.session.query(Ticket)
+            .filter(Ticket.order_id == int(info["orderId"]))
+            .options(
+                joinedload(Ticket.event),
+                joinedload(Ticket.ticket_type)
+            )
+            .all()
+        )
+        status="SUCCESS"
+    else:
+        status="FAILED"
     return render_template("payment/payment_return.html", **{
         "status": status,
         "orderId": info["orderId"],
@@ -278,4 +322,72 @@ def vnpay_return():
         "transId": info["transId"],
         "message": info["message"],
         "resultCode": info["resultCode"],
+        "tickets": tickets,
     }), (200 if status == "SUCCESS" else 400)
+
+
+
+#Xem chi tiết vé của người dùng
+def _ensure_ticket_qr(ticket: Ticket):
+    #Phát hành token QR (HS256) nếu vé chưa có
+    if ticket.qr_data:
+        return
+
+    iat = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+
+    payload = {
+        "ver": 1,
+        "code": ticket.ticket_code,
+        "event_id": ticket.event_id,
+        "type_id": ticket.ticket_type_id,
+        "iat": iat,
+    }
+    token = sign_payload(payload)
+    ticket.qr_data = token
+    ticket.issued_at = datetime.utcnow()
+    db.session.commit()
+
+@orders_bp.route("/ticket/<int:ticket_id>")
+@login_required
+def ticket_detail(ticket_id):
+    # nạp đầy đủ quan hệ để render template
+    t = (
+        Ticket.query.options(
+            joinedload(Ticket.event),
+            joinedload(Ticket.ticket_type),
+            joinedload(Ticket.order).joinedload("customer"),
+        )
+        .filter(Ticket.id == ticket_id)
+        .first()
+    )
+    if not t:
+        abort(404)
+
+    #kiểm tra chủ sở hữu qua Order.customer_id
+    if not t.order or t.order.customer_id != current_user.id:
+        abort(403)
+
+    _ensure_ticket_qr(t)
+    return render_template("order/ticket_detail.html", t=t)
+
+@orders_bp.route("/ticket/<int:ticket_id>/qr.png")
+@login_required
+def ticket_qr_image(ticket_id):
+    t = (
+        Ticket.query.options(joinedload(Ticket.order))
+        .filter(Ticket.id == ticket_id)
+        .first()
+    )
+    if not t:
+        abort(404)
+    if not t.order or t.order.customer_id != current_user.id:
+        abort(403)
+
+    _ensure_ticket_qr(t)
+
+    # render QR PNG từ token
+    img = qrcode.make(t.qr_data)
+    buf = BytesIO()
+    img.save(buf, format="PNG")
+    buf.seek(0)
+    return send_file(buf, mimetype="image/png")

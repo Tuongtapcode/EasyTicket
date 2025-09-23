@@ -28,30 +28,32 @@ def count_sold_by_ticket_type(ticket_type_ids: list[int]) -> dict[int, int]:
     return {tid: cnt for tid, cnt in rows}
 
 #Lay ve cua nguoi dung
-def get_tickets_of_user(user_id: int, status: str | None = None,
-                        q: str | None = None, page: int = 1, per_page: int = 12):
-    qry = (Ticket.query
-           .options(joinedload(Ticket.event), joinedload(Ticket.ticket_type))
-           .join(Order, Ticket.order_id == Order.id)
-           .filter(Order.customer_id == user_id))
-
-    if status:
-        # status truyền dạng chuỗi: ACTIVE / USED / CANCELLED / REFUNDED
-        try:
-            qry = qry.filter(Ticket.status == TicketStatus[status])
-        except KeyError:
-            pass  # nếu status không hợp lệ thì bỏ qua
+def get_tickets_of_user(user_id: int, q: str = "", status: str = None, page: int = 1, per_page: int = 12):
+    query = (
+        db.session.query(Ticket)
+        .join(Order)
+        .filter(Order.customer_id == user_id)
+        .options(
+            joinedload(Ticket.event),
+            joinedload(Ticket.ticket_type)
+        )
+        .order_by(Ticket.created_at.desc())
+    )
 
     if q:
-        kw = f"%{q.strip()}%"
-        qry = qry.join(Event, Ticket.event)\
-                 .join(TicketType, Ticket.ticket_type)\
-                 .filter(or_(Ticket.ticket_code.ilike(kw),
-                             Event.name.ilike(kw),
-                             TicketType.name.ilike(kw)))
+        like_q = f"%{q.strip()}%"
+        query = query.filter(
+            db.or_(
+                Ticket.ticket_code.ilike(like_q),
+                Ticket.ticket_type.has(TicketType.name.ilike(like_q)),
+                Ticket.event.has(Event.name.ilike(like_q))
+            )
+        )
 
-    return qry.order_by(Ticket.created_at.desc())\
-              .paginate(page=page, per_page=per_page, error_out=False)
+    if status:
+        query = query.filter(Ticket.status == status)
+
+    return query.paginate(page=page, per_page=per_page)
 def get_ticket_by_id(ticket_id: int):
     return Ticket.query.get(ticket_id)
 

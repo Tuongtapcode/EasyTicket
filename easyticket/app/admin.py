@@ -173,6 +173,8 @@ class UserView(SecureModelView):
     details_modal = True
     column_exclude_list = ['password','avatar']
     column_filters = ['username', 'email','phone']
+    #Ngoại trừ những field sau được sửa
+    form_excluded_columns = ['password','avatar','organized_events','orders']
 
 class EventView(SecureModelView):
     can_view_details = True
