@@ -1,9 +1,9 @@
 
 from flask import Blueprint, render_template, url_for, flash, redirect, request
-from flask_login import logout_user,current_user, login_user
-from app.dao.user_dao import *
+from flask_login import logout_user,current_user, login_user,login_required
+from app import dao
 from app.forms import RegistrationForm, LoginForm
-from werkzeug.security import  check_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
 
 #Blue print dùng để nhóm các routes lại cho gọn hơn
 auth = Blueprint('auth', __name__, template_folder='templates')
@@ -14,7 +14,7 @@ def register():
     if form.validate_on_submit():
         try:
             # Gọi hàm từ DAO để thêm người dùng
-            add_user(
+            dao.add_user(
                 first_name=form.first_name.data,
                 last_name=form.last_name.data,
                 username=form.username.data,
@@ -23,7 +23,7 @@ def register():
                 password=form.password.data
             )
             flash('Your account has been created! You are now able to log in', 'success')
-            return redirect(url_for('main.index'))
+            return redirect(url_for('index'))
         except Exception as e:
             flash(f'An error occurred: {str(e)}', 'danger')
 
@@ -34,19 +34,17 @@ def register():
 def login():
     #Nếu đã đăng nhập, chuyển hướng về trang chủ
     if current_user.is_authenticated:
-        return redirect(url_for('main.index'))
+        return redirect(url_for('index'))
 
     form = LoginForm()
     if form.validate_on_submit():
-        user =get_user_by_username(form.username.data) #Trong dao có hàm này để check user
+        user = dao.get_user_by_username(form.username.data) #Trong dao có hàm này để check user
         if user and check_password_hash(user.password, form.password.data):
             # Mật khẩu đúng, đăng nhập người dùng
             login_user(user, remember=form.remember.data) #remeber để lưu lại người dùng khi bấm nhớ
             next_page = request.args.get('next')
             flash('Login successful!', 'success')
-            if current_user.user_role.value=="ADMIN":
-                return redirect(url_for('admin.index'))
-            return redirect(next_page or url_for('main.index'))
+            return redirect(next_page or url_for('index'))
         else:
             flash('Login Unsuccessful. Please check username and password', 'danger')
     return render_template('auth/login.html', title='Log In', form=form)
@@ -55,9 +53,4 @@ def login():
 @auth.route("/logout")
 def logout():
     logout_user()#xoa user khoi flask login
-    return redirect(url_for('main.index'))
-
-@auth.route("/forbidden")
-def forbidden():
-    return render_template('auth/forbidden.html'),403
-
+    return redirect(url_for('index'))
