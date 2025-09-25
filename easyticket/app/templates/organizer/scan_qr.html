@@ -1,0 +1,407 @@
+{% extends "layout/base.html" %}
+{% block content %}
+<section class="py-4">
+ <div class="container">
+   <h3>Quét QR - {{ event.name }}</h3>
+   <p class="text-muted">Camera sẽ quét QR từ điện thoại khách. Sau khi quét thành công, hệ thống sẽ ghi nhận check-in 1 lần.</p>
+
+
+   <div class="row">
+     <div class="col-md-7">
+       <!-- video / camera -->
+       <div id="reader" style="width:100%; min-height:320px; border: 2px dashed #eee; border-radius:8px; padding:8px"></div>
+       <div class="mt-2">
+         <button id="btnStart" class="btn btn-success">Bắt đầu quét</button>
+         <button id="btnStop" class="btn btn-outline-secondary">Dừng</button>
+       </div>
+     </div>
+
+
+     <div class="col-md-5">
+       <div id="resultCard" class="card d-none">
+         <div class="card-body">
+           <h5 class="card-title" id="resStatus"></h5>
+           <p class="card-text" id="resMessage"></p>
+           <ul class="list-group list-group-flush" id="resDetail"></ul>
+         </div>
+       </div>
+
+
+       <div id="loading" class="alert alert-info mt-2 d-none">Đang xử lý...</div>
+       <div id="error" class="alert alert-danger mt-2 d-none"></div>
+     </div>
+   </div>
+ </div>
+</section>
+
+
+<!-- CDN ổn định nhất -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+ const eventId    = {{ event.id|tojson }};
+ const errorBox   = document.getElementById("error");
+ const loadingBox = document.getElementById("loading");
+ const resultCard = document.getElementById("resultCard");
+ const btnStart   = document.getElementById("btnStart");
+ const btnStop    = document.getElementById("btnStop");
+ const readerBox  = document.getElementById("reader");
+
+
+ let scanning = false;
+
+
+ // Kiểm tra library với timeout
+ function checkLibrary() {
+   return new Promise((resolve) => {
+     let attempts = 0;
+     const maxAttempts = 50; // 5 giây
+
+
+     function check() {
+       attempts++;
+       if (typeof Html5Qrcode !== 'undefined') {
+         resolve(true);
+       } else if (attempts >= maxAttempts) {
+         resolve(false);
+       } else {
+         setTimeout(check, 100);
+       }
+     }
+     check();
+   });
+ }
+
+
+ async function init() {
+   const libraryLoaded = await checkLibrary();
+
+
+   if (!libraryLoaded) {
+     showError("Không thể load thư viện QR code. Vui lòng: <br>1. Kiểm tra kết nối internet<br>2. Refresh trang (F5)<br>3. Thử trình duyệt khác");
+     return;
+   }
+
+
+   console.log("Html5Qrcode library loaded successfully");
+
+
+   function showLoading(on){ loadingBox.classList.toggle("d-none", !on); }
+   function showError(msg){
+     errorBox.innerHTML = String(msg || "Lỗi không xác định");
+     errorBox.classList.remove("d-none");
+     resultCard.classList.add("d-none");
+   }
+   function clearError(){ errorBox.classList.add("d-none"); }
+
+
+   // HTTPS/localhost check
+   (function secureCheck(){
+     const isHttps = location.protocol === "https:";
+     const isLocal = ["localhost","127.0.0.1","[::1]"].includes(location.hostname);
+     if (!isHttps && !isLocal) {
+       showError("Trình duyệt chặn camera vì trang không chạy HTTPS. Dùng https:// hoặc http://localhost.");
+     }
+   })();
+
+
+   // ====== Fallback chọn phương án quét ======
+   const canUseNative = ('BarcodeDetector' in window);
+
+
+   // --- phương án A: html5-qrcode ---
+   let qrReader = null;
+   async function startWithHtml5Qrcode(){
+     if (scanning) return;
+     clearError(); showLoading(true);
+     try {
+       if (!qrReader) qrReader = new Html5Qrcode("reader");
+
+
+       const cameras = await Html5Qrcode.getCameras();
+       if (cameras.length === 0) {
+         throw new Error("Không tìm thấy camera nào trên thiết bị");
+       }
+
+
+       console.log("Available cameras:", cameras);
+
+
+       const config = {
+         fps: 10,
+         qrbox: { width: 300, height: 300 },
+         aspectRatio: 1.0
+       };
+
+
+       await qrReader.start(
+         { facingMode: "environment" }, // Back camera
+         config,
+         onScanSuccess,
+         onScanError
+       );
+
+
+       scanning = true;
+       btnStart.textContent = "Đang quét...";
+       btnStart.disabled = true;
+       btnStop.disabled = false;
+
+
+       console.log("Camera started successfully");
+     } catch (e) {
+       console.error("Html5Qrcode error:", e);
+       let errorMsg = "Không thể mở camera: ";
+
+
+       if (e.name === 'NotAllowedError') {
+         errorMsg += "Cần cấp quyền truy cập camera";
+       } else if (e.name === 'NotFoundError') {
+         errorMsg += "Không tìm thấy camera";
+       } else if (e.name === 'NotSupportedError') {
+         errorMsg += "Trình duyệt không hỗ trợ camera";
+       } else {
+         errorMsg += e.message || String(e);
+       }
+
+
+       showError(errorMsg);
+     } finally {
+       showLoading(false);
+     }
+   }
+
+
+   function onScanError(error) {
+     // Silent error handling - chỉ log
+     console.log("Scan error:", error);
+   }
+
+
+   async function stopHtml5Qrcode(){
+     if (qrReader && scanning) {
+       try {
+         await qrReader.stop();
+         qrReader.clear();
+         console.log("Camera stopped");
+       } catch(e) {
+         console.error("Stop camera error:", e);
+       }
+     }
+     scanning = false;
+     btnStart.textContent = "Bắt đầu quét";
+     btnStart.disabled = false;
+     btnStop.disabled = true;
+   }
+
+
+   // --- phương án B: BarcodeDetector (native) ---
+   let stream = null, video = null, detector = null, rafId = null;
+   async function startWithBarcodeDetector(){
+     if (scanning) return;
+     clearError(); showLoading(true);
+     try{
+       if (!video){
+         video = document.createElement('video');
+         video.setAttribute('playsinline','true');
+         video.style.width = '100%';
+         video.style.maxHeight = '360px';
+         video.style.objectFit = 'cover';
+         readerBox.innerHTML = '';
+         readerBox.appendChild(video);
+       }
+
+
+       stream = await navigator.mediaDevices.getUserMedia({
+         video: {
+           facingMode: { ideal: "environment" },
+           width:{ideal:1280},
+           height:{ideal:720}
+         },
+         audio: false
+       });
+
+
+       video.srcObject = stream;
+       await video.play();
+
+
+       detector = new BarcodeDetector({ formats: ['qr_code'] });
+       scanning = true;
+       btnStart.textContent = "Đang quét...";
+       btnStart.disabled = true;
+       btnStop.disabled = false;
+
+
+       console.log("Native BarcodeDetector started");
+       loopDetect();
+     }catch(e){
+       console.error("BarcodeDetector error:", e);
+       await stopBarcodeDetector();
+       showError("Native QR không hỗ trợ, chuyển sang phương án khác...");
+       setTimeout(() => startWithHtml5Qrcode(), 1000);
+     }finally{ showLoading(false); }
+   }
+
+
+   async function stopBarcodeDetector(){
+     if (rafId) cancelAnimationFrame(rafId);
+     if (video) {
+       try{ video.pause(); video.srcObject = null; }catch(_){}
+     }
+     if (stream){
+       stream.getTracks().forEach(t=>t.stop());
+       stream=null;
+     }
+     scanning = false;
+     btnStart.textContent = "Bắt đầu quét";
+     btnStart.disabled = false;
+     btnStop.disabled = true;
+   }
+
+
+   async function loopDetect(){
+     if (!scanning) return;
+     try{
+       if (video.readyState === video.HAVE_ENOUGH_DATA) {
+         const barcodes = await detector.detect(video);
+         if (barcodes && barcodes.length){
+           await onScanSuccess(barcodes[0].rawValue || "");
+           setTimeout(()=>{ if (scanning) loopDetect(); }, 2500);
+           return;
+         }
+       }
+     }catch(e){
+       console.error("Detect error:", e);
+     }
+     rafId = requestAnimationFrame(loopDetect);
+   }
+
+
+   // ====== xử lý kết quả ======
+   async function onScanSuccess(decodedText){
+     if (!decodedText) return;
+
+
+     console.log("QR Code detected:", decodedText);
+     showLoading(true);
+
+
+     try{
+       const resp = await fetch("/api/qr/validate", {
+         method: "POST",
+         headers: {
+           "Content-Type": "application/json",
+           "Accept": "application/json",
+           "X-Requested-With": "XMLHttpRequest"
+         },
+         body: JSON.stringify({ qr: decodedText, event_id: eventId })
+       });
+
+
+       if (!resp.ok) {
+         throw new Error(`HTTP ${resp.status}: ${resp.statusText}`);
+       }
+
+
+       const j = await resp.json();
+       showLoading(false);
+
+
+       if (j.ok) {
+         showResult(true, "✅ Check-in thành công", formatSuccess(j));
+         // Tự động dừng scan sau khi thành công
+         setTimeout(() => {
+           if (scanning) {
+             stopBarcodeDetector();
+             stopHtml5Qrcode();
+           }
+         }, 4000);
+       } else if (j.error === "already_checked_in") {
+         showResult(false, "⚠️ Vé đã check-in", formatAlready(j));
+       } else {
+         showError(j.error || j.message || "Lỗi xác thực QR code");
+       }
+     }catch(ex){
+       console.error("API error:", ex);
+       showLoading(false);
+       showError("Lỗi kết nối: " + (ex && ex.message ? ex.message : ex));
+     }
+   }
+
+
+   function showResult(ok, title, detailHtml){
+     errorBox.classList.add("d-none");
+     resultCard.classList.remove("d-none");
+     document.getElementById("resStatus").textContent  = title;
+     document.getElementById("resMessage").textContent = ok ? "Khách đã vào cổng thành công!" : "Vé đã được sử dụng";
+     document.getElementById("resDetail").innerHTML    = detailHtml;
+   }
+
+
+   function formatSuccess(j){
+     const t=j.ticket||{}, b=j.buyer||{};
+     return [
+       li("Mã vé", t.ticket_code),
+       li("Loại vé", t.ticket_type || "Vé thường"),
+       li("Người mua", (b.first_name||"")+" "+(b.last_name||"") || b.username || b.email || "N/A"),
+       li("Email", b.email || "N/A"),
+       li("Điện thoại", b.phone || "N/A"),
+       li("Check-in lúc", j.checkin_at || new Date().toLocaleString('vi-VN'))
+     ].join("");
+   }
+
+
+   function formatAlready(j){
+     const t=j.ticket||{}, b=j.buyer||{};
+     return [
+       li("Mã vé", t.ticket_code),
+       li("Loại vé", t.ticket_type || "Vé thường"),
+       li("Người mua", (b.first_name||"")+" "+(b.last_name||"") || b.username || b.email || "N/A"),
+       li("Đã check-in", j.checked_at || "Trước đó")
+     ].join("");
+   }
+
+
+   function li(label, value){
+     const v = value ? escapeHtml(String(value)) : "N/A";
+     return `<li class="list-group-item"><strong>${escapeHtml(label)}:</strong> ${v}</li>`;
+   }
+
+
+   function escapeHtml(s){
+     return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+   }
+
+
+   // Cấu hình nút
+   btnStop.disabled = true;
+   btnStart.addEventListener('click', () => {
+     if (canUseNative) {
+       startWithBarcodeDetector();
+     } else {
+       startWithHtml5Qrcode();
+     }
+   });
+
+
+   btnStop.addEventListener('click', async () => {
+     await stopBarcodeDetector();
+     await stopHtml5Qrcode();
+   });
+
+
+   // Debug info
+   console.log("QR Scanner initialized. Native support:", canUseNative);
+ }
+
+
+ // Khởi tạo
+ init();
+});
+</script>
+
+
+{% endblock %}

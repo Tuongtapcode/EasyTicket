@@ -1,3 +1,49 @@
 <div>
-    Xin chào
+    <header class="gradient-bg text-white shadow-lg">
+        <div class="container py-3">
+            <div class="d-flex align-items-center justify-content-between">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-ticket-alt me-2"></i>EasyTicket
+                </h1>
+                <nav class="d-none d-md-flex">
+                    <a href="{{ url_for('main.index') }}" class="text-white text-decoration-none me-4 hover-underline">
+                        <i class="fas fa-home me-1"></i>Trang chủ
+                    </a>
+                    <a href="#" class="text-white text-decoration-none me-4 hover-underline">
+                        <i class="fas fa-phone me-1"></i>Liên hệ
+                    </a>
+                    {% if current_user.is_authenticated %}
+                    <a href="#" class="text-white text-decoration-none me-4 hover-underline">
+                        Xin chào, {{ current_user.username }}
+                    </a>
+
+                    {% if current_user.user_role.value == 'ORGANIZER' %}
+                    <a href="{{url_for('organizer.dashboard')}}" class="text-white text-decoration-none me-4 hover-underline">
+                        <i class="fas fa-calendar me-1"></i>Quản lý sự kiện
+                    </a>
+
+                    {% elif current_user.user_role.value == 'USER' %}
+                    <a href="{{url_for('order.my_tickets')}}" class="text-white text-decoration-none me-4 hover-underline">
+                        <i class="fas fa-calendar me-1"></i>Vé của tôi
+                    </a>
+                    {% endif %}
+                    <a href="{{ url_for('auth.logout') }}" class="text-white text-decoration-none me-4 hover-underline">
+                        <i class="fas fa-user me-1"></i>Đăng xuất
+                    </a>
+                        {% else %}
+                    <a href="{{ url_for('auth.login') }}" class="text-white text-decoration-none me-4 hover-underline">
+                        <i class="fas fa-user me-1"></i>Đăng nhập
+                    </a>
+                       <a href="{{ url_for('auth.register') }}" class="text-white text-decoration-none me-4 hover-underline">
+                        <i class="fas fa-user me-1"></i>Đăng ký
+                    </a>
+                    {% endif %}
+                </nav>
+                <button class="navbar-toggler d-md-none text-white" type="button">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
 </div>

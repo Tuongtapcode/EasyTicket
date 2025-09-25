@@ -1,0 +1,471 @@
+{% extends 'layout/base.html' %}
+{% block content %}
+
+<!-- Dashboard Header -->
+<section class="search-section">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="category-filter">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h2 class="h4 mb-2">
+                                <i class="fas fa-chart-line me-2"></i>Dashboard Nhà Tổ Chức
+                            </h2>
+                            <p class="mb-0 text-muted">Quản lý sự kiện và theo dõi doanh thu của bạn</p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <!--                            <button class="btn btn-primary-custom text-white" data-bs-toggle="modal"-->
+                            <!--                                    data-bs-target="#createEventModal">-->
+                            <!--                                <i class="fas fa-plus me-2"></i>Tạo sự kiện mới-->
+                            <!--                            </button>-->
+
+                            <a class="btn btn-primary-custom text-white" href="{{ url_for('event.create_event') }}">
+                                <i class="fas fa-plus me-2"></i>Tạo sự kiện mới
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Statistics Cards -->
+<section class="py-4">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-lg-3 col-md-6">
+                <div class="card card-hover border-0 bg-primary text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h3 class="mb-0" id="totalEvents">12</h3>
+                                <p class="mb-0">Tổng sự kiện</p>
+                            </div>
+                            <i class="fas fa-calendar-alt fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="card card-hover border-0 bg-success text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h3 class="mb-0" id="totalTicketsSold">1,247</h3>
+                                <p class="mb-0">Vé đã bán</p>
+                            </div>
+                            <i class="fas fa-ticket-alt fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="card card-hover border-0 bg-info text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h3 class="mb-0" id="totalRevenue">24,850,000</h3>
+                                <p class="mb-0">Doanh thu (VNĐ)</p>
+                            </div>
+                            <i class="fas fa-money-bill-wave fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="card card-hover border-0 bg-warning text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h3 class="mb-0" id="activeEvents">4</h3>
+                                <p class="mb-0">Đang diễn ra</p>
+                            </div>
+                            <i class="fas fa-play-circle fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Main Content -->
+<section class="py-5">
+    <div class="container">
+        <div class="row">
+            <!-- Events Management -->
+            <div class="col-lg-8">
+                <div class="filter-sidebar">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5>
+                            <i class="fas fa-calendar-check me-2"></i>Quản lý sự kiện
+                        </h5>
+                        <div class="d-flex gap-2">
+                            <select class="form-select" id="statusFilterOrganizer">
+                                <option value="">Tất cả trạng thái</option>
+                                <option value="PUBLISHED">Đã xuất bản</option>
+                                <option value="DRAFT">Bản nháp</option>
+                                <option value="CANCELLED">Đã hủy</option>
+                                <option value="COMPLETED">Đã hoàn thành</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="eventsListOrganizer">
+                        <div id="eventsListOrganizer">
+                            {% for e in events %}
+                            <div class="event-card">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h6 class="mb-0">{{ e.name }}</h6>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle"
+                                                data-bs-toggle="dropdown">
+                                            <i class="fas fa-cog"></i>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li><a class="dropdown-item"
+                                                   href="{{ url_for('event.edit_event', event_id=e.id) }}">
+                                                <i class="fas fa-edit me-2"></i>Chỉnh sửa
+                                            </a></li>
+                                            <li><a class="dropdown-item"
+                                                   event_id=e.id) }}">
+                                                <i class="fas fa-chart-bar me-2"></i>Thống kê
+                                                </a></li>
+                                            <li>
+                                                <a class="dropdown-item"
+                                                   href="{{ url_for('event.api_get_ticket_types', event_id=e.id) }}">
+                                                    <i class="fas fa-ticket-alt me-2"></i> Quản lý vé
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <hr class="dropdown-divider">
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item text-danger" href="#"
+                                                   onclick="deleteEvent({{ e.id }})">
+                                                    <i class="fas fa-trash me-2"></i>Xóa
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <p class="text-muted small mb-2">{{ e.description[:100] }}...</p>
+
+                                <div class="row g-2 mb-2">
+                                    <div class="col-md-6">
+                                        <small class="text-muted">
+                                            <i class="fas fa-calendar me-1"></i>{{ e.start_datetime.strftime('%d/%m/%Y
+                                            %H:%M') }}
+                                        </small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <small class="text-muted">
+                                            <i class="fas fa-map-marker-alt me-1"></i>{{ e.address }}
+                                        </small>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="d-flex align-items-center">
+                                        <span class="status-dot status-{{ e.status|lower }}"></span>
+                                        <small class="text-muted">{{ e.status }}</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="small">
+                                            <strong>Vé đã bán:</strong> {{ e.tickets_sold }}/{{ e.total_tickets }}
+                                        </div>
+                                        <div class="small text-success">
+                                            <strong>Doanh thu:</strong> {{ "{:,.0f}".format(e.revenue or 0) }} VNĐ
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% else %}
+                            <p class="text-muted">Chưa có sự kiện nào.</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Pagination -->
+                    {% if pagination.pages > 1 %}
+                    <nav aria-label="Page navigation" class="mt-4">
+                        <ul class="pagination pagination-sm justify-content-center">
+                            <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                                <a class="page-link"
+                                   href="{{ url_for('organizer.dashboard', page=pagination.prev_num) }}">&laquo;</a>
+                            </li>
+
+                            {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1,
+                            right_current=2) %}
+                            {% if p %}
+                            <li class="page-item {% if p == pagination.page %}active{% endif %}">
+                                <a class="page-link" href="{{ url_for('organizer.dashboard', page=p) }}">{{ p
+                                    }}</a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled"><span class="page-link">…</span></li>
+                            {% endif %}
+                            {% endfor %}
+
+                            <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                                <a class="page-link"
+                                   href="{{ url_for('organizer.dashboard', page=pagination.next_num) }}">&raquo;</a>
+                            </li>
+                        </ul>
+                    </nav>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- Quick Actions -->
+                <div class="filter-sidebar mb-4">
+                    <h6>
+                        <i class="fas fa-bolt me-2"></i>Thao tác nhanh
+                    </h6>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-primary btn-sm" onclick="createEvent()">
+                            <i class="fas fa-plus me-2"></i>Tạo sự kiện mới
+                        </button>
+                        <button class="btn btn-outline-success btn-sm" onclick="viewReports()">
+                            <i class="fas fa-chart-bar me-2"></i>Xem báo cáo
+                        </button>
+                        <button class="btn btn-outline-info btn-sm" onclick="manageTickets()">
+                            <i class="fas fa-ticket-alt me-2"></i>Quản lý vé
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="filter-sidebar">
+                    <h6>
+                        <i class="fas fa-clock me-2"></i>Hoạt động gần đây
+                    </h6>
+                    <div class="small text-muted">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-dot-circle text-success me-2"></i>
+                            <span>5 vé mới được bán cho "Lễ hội âm nhạc"</span>
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-dot-circle text-info me-2"></i>
+                            <span>Cập nhật thông tin "Workshop Nấu ăn"</span>
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-dot-circle text-warning me-2"></i>
+                            <span>Xuất bản sự kiện "Hội thảo AI"</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-dot-circle text-secondary me-2"></i>
+                            <span>Tạo bản nháp "Triển lãm nghệ thuật"</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .ticket-type-form {
+        background: #f8f9fa;
+        padding: 1rem;
+        border-radius: 8px;
+        border-left: 4px solid #667eea;
+    }
+
+    .opacity-75 {
+        opacity: 0.75;
+    }
+
+    .event-card {
+        background: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        border-left: 4px solid #667eea;
+        transition: all 0.3s ease;
+    }
+
+    .event-card:hover {
+        transform: translateX(5px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 0.5rem;
+    }
+
+    .status-published {
+        background-color: #28a745;
+    }
+
+    .status-draft {
+        background-color: #ffc107;
+    }
+
+    .status-cancelled {
+        background-color: #dc3545;
+    }
+
+    .status-completed {
+        background-color: #6c757d;
+    }
+</style>
+
+<script>
+
+
+    // Format date function
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('vi-VN', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
+    // Format currency
+    function formatCurrency(amount) {
+        return parseInt(amount).toLocaleString('vi-VN') + ' VNĐ';
+    }
+
+    // Get status display
+    function getStatusDisplay(status) {
+        const statusMap = {
+            'PUBLISHED': {text: 'Đã xuất bản', class: 'status-published'},
+            'DRAFT': {text: 'Bản nháp', class: 'status-draft'},
+            'CANCELLED': {text: 'Đã hủy', class: 'status-cancelled'},
+            'COMPLETED': {text: 'Đã hoàn thành', class: 'status-completed'}
+        };
+        return statusMap[status] || {text: status, class: 'status-draft'};
+    }
+
+    // Filter events by status
+    function filterEventsByStatus() {
+        const statusFilter = document.getElementById('statusFilterOrganizer').value;
+        const filteredEvents = statusFilter
+            ? organizerEvents.filter(event => event.status === statusFilter)
+            : organizerEvents;
+
+        renderOrganizerEvents(filteredEvents);
+    }
+
+    // Add new ticket type form
+    function addTicketType() {
+        const container = document.getElementById('ticketTypesContainer');
+        const ticketTypeForm = `
+        <div class="ticket-type-form mb-3">
+            <div class="row">
+                <div class="col-md-4">
+                    <input type="text" class="form-control" placeholder="Tên loại vé" required>
+                </div>
+                <div class="col-md-3">
+                    <input type="number" class="form-control" placeholder="Giá (VNĐ)" required>
+                </div>
+                <div class="col-md-3">
+                    <input type="number" class="form-control" placeholder="Số lượng" required>
+                </div>
+                <div class="col-md-2">
+                    <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="removeTicketType(this)">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="row mt-2">
+                <div class="col-12">
+                    <input type="text" class="form-control" placeholder="Mô tả loại vé">
+                </div>
+            </div>
+        </div>
+    `;
+        container.insertAdjacentHTML('beforeend', ticketTypeForm);
+    }
+
+    // Remove ticket type form
+    function removeTicketType(button) {
+        const ticketTypeForm = button.closest('.ticket-type-form');
+        if (document.querySelectorAll('.ticket-type-form').length > 1) {
+            ticketTypeForm.remove();
+        } else {
+            alert('Cần ít nhất một loại vé!');
+        }
+    }
+
+    // Event action functions
+    function editEvent(eventId) {
+        alert(`Chỉnh sửa sự kiện ID: ${eventId}`);
+        // Implement edit functionality
+    }
+
+    function viewEventStats(eventId) {
+        alert(`Xem thống kê sự kiện ID: ${eventId}`);
+        // Implement stats view
+    }
+
+    function manageEventTickets(eventId) {
+        alert(`Quản lý vé sự kiện ID: ${eventId}`);
+        // Implement ticket management
+    }
+
+    async function deleteEvent(eventId) {
+        if (!confirm("Bạn có chắc muốn xoá sự kiện này?")) return;
+
+        let res = await fetch(`/events/${eventId}/delete`, {method: "DELETE"});
+        if (res.ok) {
+            alert("Xóa thành công");
+            location.reload();
+        } else {
+            let data = await res.json();
+            alert("Lỗi: " + (data.error || "Không thể xóa"));
+        }
+    }
+
+    function saveAsDraft() {
+        alert('Lưu sự kiện dưới dạng bản nháp!');
+        // Implement save as draft
+        const modal = bootstrap.Modal.getInstance(document.getElementById('createEventModal'));
+        modal.hide();
+    }
+
+    function publishEvent() {
+        alert('Xuất bản sự kiện thành công!');
+        // Implement publish event
+        const modal = bootstrap.Modal.getInstance(document.getElementById('createEventModal'));
+        modal.hide();
+    }
+
+    function createEvent() {
+        const modal = new bootstrap.Modal(document.getElementById('createEventModal'));
+        modal.show();
+    }
+
+    function viewReports() {
+        alert('Chức năng báo cáo chi tiết sẽ được triển khai!');
+    }
+
+    function manageTickets() {
+        alert('Chức năng quản lý vé chi tiết sẽ được triển khai!');
+    }
+
+    // Event listeners
+    document.addEventListener('DOMContentLoaded', function () {
+        // Status filter
+        document.getElementById('statusFilterOrganizer').addEventListener('change', filterEventsByStatus);
+
+        // Initialize
+        renderOrganizerEvents();
+    });
+</script>
+
+{% endblock %}

@@ -1,0 +1,284 @@
+{% extends "layout/base.html" %}
+{% block content %}
+
+<style>
+  /* ===== HERO dark gradient ===== */
+  .ticket-hero{
+    background: linear-gradient(180deg,#111318 0%, #1a1d23 100%);
+    color: #e9ecef;
+  }
+  .ticket-hero a{
+    color:#cbd5ff;
+  }
+  .ticket-hero a:hover{
+    color:#ffffff; text-decoration: underline;
+  }
+
+  /* ===== Left ticket card ===== */
+  .ticket-card{
+    position: relative;
+    background: #2b2f36;
+    border-radius: 24px;
+    padding: 22px 24px;
+    color: #f8f9fa;
+    box-shadow: 0 10px 36px rgba(0,0,0,.45);
+    height: 100%;
+  }
+  .ticket-card::before,
+  .ticket-card::after{
+    content: "";
+    position: absolute;
+    right: -14px;
+    width: 28px; height: 28px;
+    background: #1a1d23;
+    border-radius: 50%;
+  }
+  .ticket-card::before{ top: 20px; }
+  .ticket-card::after{ bottom: 20px; }
+  .ticket-perf{
+    position: absolute; top: 0; bottom: 0; right: -2px;
+    width: 2px;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(255,255,255,.35) 0 8px,
+      transparent 8px 16px
+    );
+    filter: blur(.2px);
+  }
+
+  /* Làm màu phụ dễ đọc trên nền tối */
+  .ticket-card .text-muted{ color: rgba(255,255,255,.7) !important; }
+
+  .hr-soft{
+    border: none; height: 1px;
+    background: linear-gradient(90deg, rgba(255,255,255,.1), rgba(255,255,255,.03));
+  }
+
+  /* ===== Right banner ===== */
+  .ticket-banner{
+    position: relative;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 10px 36px rgba(0,0,0,.45);
+    min-height: 320px;
+    height: 100%;
+  }
+  .ticket-banner img{
+    width: 100%; height: 100%;
+    object-fit: cover; display:block;
+  }
+
+
+  .ticket-banner-overlay{
+    position:absolute; inset:0;
+    background: linear-gradient(90deg, rgba(0,0,0,.55), rgba(0,0,0,.12));
+    pointer-events: none;
+  }
+
+  .ticket-banner::after{
+    content:""; position:absolute; inset:0;
+    box-shadow: inset 0 0 120px rgba(0,0,0,.35);
+    pointer-events:none;
+  }
+
+  /* ===== Ticket list card ===== */
+  .ticket-type-card{ background:#ffffff; }
+  .qty-input{ max-width: 80px; }
+
+  /* Button state contrast on dark */
+  .btn-success{
+    box-shadow: 0 6px 16px rgba(25,135,84,.35);
+  }
+  .btn-success:disabled{
+    opacity:.6;
+  }
+
+  @media (max-width: 991px){
+    .ticket-card::before, .ticket-card::after{ right: -10px; width: 20px; height: 20px; }
+    .ticket-perf{ right: -1px; }
+    /* Overlay mạnh hơn trên màn nhỏ để tránh chói */
+    .ticket-banner-overlay{ background: rgba(0,0,0,.55); }
+  }
+</style>
+
+<!-- ===== HERO ===== -->
+<section class="ticket-hero py-4">
+  <div class="container">
+    <a href="{{ url_for('main.index') }}" class="text-decoration-none text-light">&larr; Quay lại</a>
+
+    <div class="row g-4 align-items-stretch mt-1">
+      <!-- LEFT: ticket info card -->
+      <div class="col-lg-5">
+        <div class="ticket-card">
+          <div class="ticket-perf"></div>
+
+          <h3 class="mb-2">{{ event.name }}</h3>
+
+          <div class="d-flex align-items-center text-muted mb-2">
+            <i class="fa-regular fa-calendar me-2"></i>
+            {% if event.start_datetime %}
+              {{ event.start_datetime.strftime('%H:%M · %d/%m/%Y') }}
+            {% else %}
+              Cập nhật sau
+            {% endif %}
+          </div>
+
+          <div class="d-flex align-items-start text-muted mb-3">
+            <i class="fa-solid fa-location-dot me-2 mt-1"></i>
+            <span>{{ event.address or 'Cập nhật địa điểm' }}</span>
+          </div>
+
+          <hr class="hr-soft my-3">
+
+          {# Giá thấp nhất lấy từ ticket_types #}
+          {% set price_list = ticket_types | map(attribute='price') | list %}
+          {% set min_price = (price_list|min) if price_list and price_list|length>0 else 0 %}
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="text-muted">Giá từ</span>
+            <span class="h5 mb-0 text-success">
+              {{ "{:,.0f}".format(min_price) }} đ
+              <i class="fa-solid fa-chevron-right small ms-1"></i>
+            </span>
+          </div>
+
+          <button class="btn btn-success w-100 mt-3"
+                  onclick="document.getElementById('ticket-list')?.scrollIntoView({behavior:'smooth'})">
+            <i class="fa-solid fa-ticket me-2"></i>Mua vé ngay
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: banner -->
+      <div class="col-lg-7">
+        <div class="ticket-banner">
+          <img
+            src="{{ event.banner_image or url_for('static', filename='img/event-placeholder.jpg') }}"
+            alt="banner {{ event.name }}">
+          <div class="ticket-banner-overlay"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== MAIN CONTENT ===== -->
+<section class="py-4">
+  <div class="container">
+    <div class="row g-4">
+      <!-- LEFT: description -->
+      <div class="col-lg-8">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <h5 class="mb-2">Giới thiệu</h5>
+            <p class="mb-0">{{ event.description or 'Đang cập nhật mô tả.' }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: ticket list -->
+      <div class="col-lg-4">
+        <div class="card shadow-sm" id="ticket-list">
+          <div class="card-body">
+            <h5 class="mb-3"><i class="fas fa-ticket-alt me-2"></i>Chọn loại vé</h5>
+
+            {% if ticket_types|length == 0 %}
+              <div class="alert alert-light mb-0">Hiện chưa có loại vé.</div>
+            {% else %}
+              {# NOTE: đổi 'orders.create' thành route tạo Order của bạn #}
+              <form method="post" action="{{ url_for('order.create') }}">
+                <input type="hidden" name="event_id" value="{{ event.id }}">
+                {# Nếu dùng Flask-WTF: {{ form.csrf_token }} #}
+
+                {% for t in ticket_types %}
+                  <div class="ticket-type-card mb-2 p-2 border rounded">
+                    <div class="d-flex justify-content-between align-items-start">
+                      <div class="flex-grow-1">
+                        <div class="fw-semibold">{{ t.name }}</div>
+                        <div class="small text-muted mb-1">{{ t.description }}</div>
+                        <div class="small {{ 'text-success' if t.remaining>0 else 'text-danger' }}">
+                          {{ 'Còn ' ~ t.remaining ~ ' vé' if t.remaining>0 else 'Hết vé' }}
+                        </div>
+                      </div>
+
+                      <div class="text-end ms-2" style="min-width: 190px;">
+                        <div class="fw-bold text-primary">{{ "{:,.0f}".format(t.price) }} VNĐ</div>
+                        <div class="input-group input-group-sm mt-1">
+                          <button class="btn btn-outline-secondary" type="button"
+                                  onclick="changeQty('{{ t.id }}', -1, {{ t.remaining|int }})">−</button>
+                          <input class="form-control text-center qty-input"
+                                 name="items[{{ t.id }}]"
+                                 id="qty-{{ t.id }}"
+                                 type="number"
+                                 min="0"
+                                 max="{{ t.remaining|int }}"
+                                 value="0"
+                                 data-price="{{ t.price }}"
+                                 {{ 'disabled' if t.remaining|int == 0 }}>
+                          <button class="btn btn-outline-secondary" type="button"
+                                  onclick="changeQty('{{ t.id }}', 1, {{ t.remaining|int }})">+</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                {% endfor %}
+
+                <!-- Subtotal -->
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                  <div class="text-muted">Tạm tính</div>
+                  <div id="subtotal" class="fw-semibold">0 VNĐ</div>
+                </div>
+
+                <button id="btnSubmit" class="btn btn-success w-100 mt-2" type="submit" disabled>
+                  <i class="fas fa-shopping-cart me-2"></i>Đặt hàng
+                </button>
+              </form>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  function formatVND(n) {
+    return new Intl.NumberFormat('vi-VN').format(Math.round(Number(n) || 0)) + ' VNĐ';
+  }
+
+  function recalcSubtotal() {
+    let sum = 0;
+    document.querySelectorAll('.qty-input').forEach(inp => {
+      if (inp.disabled) return;
+      const qty = parseInt(inp.value || '0', 10);
+      const price = parseFloat(inp.dataset.price || '0');
+      if (qty > 0 && price > 0) sum += qty * price;
+    });
+    document.getElementById('subtotal').textContent = formatVND(sum);
+    document.getElementById('btnSubmit').disabled = sum <= 0;
+  }
+
+  function changeQty(id, delta, max) {
+    const el = document.getElementById('qty-' + id);
+    if (!el || el.disabled) return;
+    const cur = parseInt(el.value || '0', 10);
+    let next = cur + delta;
+    if (next < 0) next = 0;
+    if (typeof max === 'number' && next > max) next = max;
+    el.value = next;
+    recalcSubtotal();
+  }
+
+  // Validate & recalc when typing
+  document.addEventListener('input', function (e) {
+    if (e.target.matches('.qty-input')) {
+      const max = parseInt(e.target.getAttribute('max') || '0', 10);
+      let v = parseInt(e.target.value || '0', 10);
+      if (isNaN(v) || v < 0) v = 0;
+      if (max > 0 && v > max) v = max;
+      e.target.value = v;
+      recalcSubtotal();
+    }
+  });
+</script>
+
+{% endblock %}

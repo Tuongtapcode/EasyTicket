@@ -1,0 +1,112 @@
+{% extends "layout/base.html" %}
+{% block content %}
+<section class="py-4">
+  <div class="container">
+    <h2 class="mb-3">Vé của tôi</h2>
+
+    <!-- Search + Status filter -->
+    <form method="get" class="row g-2 align-items-center mb-3">
+      <div class="col-md-6">
+        <input class="form-control" name="q" value="{{ q or '' }}" placeholder="Tìm theo mã vé / tên sự kiện / loại vé">
+      </div>
+      <div class="col-md-3">
+        <select class="form-select" name="status" onchange="this.form.submit()">
+          <option value="">Tất cả trạng thái</option>
+          {% for s in ['ACTIVE','USED','CANCELLED','REFUNDED'] %}
+            <option value="{{ s }}" {{ 'selected' if selected_status==s else '' }}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3 d-grid">
+        <button class="btn btn-primary"><i class="fas fa-search me-1"></i>Tìm</button>
+      </div>
+    </form>
+
+    {% if page_obj.items|length == 0 %}
+      <div class="alert alert-light">Bạn chưa có vé nào phù hợp bộ lọc.</div>
+    {% endif %}
+
+    <div class="row g-3">
+      {% for t in page_obj.items %}
+      <div class="col-lg-6">
+        <div class="card h-100">
+          <div class="row g-0">
+            <div class="col-4">
+              <div class="h-100 w-100" style="background:linear-gradient(135deg,#7f6dff,#6ad8ff); border-radius:.5rem 0 0 .5rem; display:flex; align-items:center; justify-content:center; color:#fff; font-size:36px;">
+                <i class="far fa-calendar"></i>
+              </div>
+            </div>
+            <div class="col-8">
+              <div class="card-body">
+                <div class="d-flex justify-content-between">
+                  <h5 class="card-title mb-1">{{ t.event.name }}</h5>
+                  <span class="badge {{ 'bg-success' if t.status.name=='ACTIVE'
+                                        else 'bg-secondary' if t.status.name=='USED'
+                                        else 'bg-danger' if t.status.name=='CANCELLED'
+                                        else 'bg-warning' }}">{{ t.status.name }}</span>
+                </div>
+                <div class="small text-muted mb-1">
+                  <i class="fa-regular fa-clock me-1"></i>
+                  {{ t.event.start_datetime.strftime('%d/%m/%Y %H:%M') if t.event.start_datetime }}
+                </div>
+                <div class="small text-muted mb-2">
+                  <i class="fa-solid fa-location-dot me-1"></i>{{ t.event.address }}
+                </div>
+
+                <div class="d-flex justify-content-between">
+                  <div>
+                    <div class="fw-semibold">{{ t.ticket_type.name }}</div>
+                    <div class="small text-muted">{{ "{:,.0f}".format(t.ticket_type.price or 0) }} VNĐ</div>
+                  </div>
+                  <div class="text-end">
+                    <div class="small text-muted">Mã vé</div>
+                    <div class="fw-bold">{{ t.ticket_code }}</div>
+                  </div>
+                </div>
+              </div>
+              <div class="card-footer bg-transparent d-flex gap-2">
+                <a class="btn btn-outline-primary btn-sm"
+                   href="{{ url_for('event.event_details', event_id=t.event.id) }}">
+                  Xem sự kiện
+                </a>
+                  <a class="btn btn-outline-secondary btn-sm"
+                     href="{{ url_for('order.ticket_detail', ticket_id=t.id) }}">
+                      Xem vé
+                  </a>
+                {% if t.status.name=='ACTIVE' %}
+                <a class="btn btn-primary btn-sm"
+                   href="{{ url_for('event.event_details', event_id=t.event.id) }}#use">
+                  Hướng dẫn sử dụng
+                </a>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% if page_obj.pages > 1 %}
+      <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+          <li class="page-item {{ 'disabled' if not page_obj.has_prev }}">
+            <a class="page-link"
+               href="{{ url_for('order.my_tickets', q=q, status=selected_status, page=page_obj.prev_num) }}">&laquo;</a>
+          </li>
+          {% for p in range(1, page_obj.pages + 1) %}
+          <li class="page-item {{ 'active' if p == page_obj.page }}">
+            <a class="page-link"
+               href="{{ url_for('order.my_tickets', q=q, status=selected_status, page=p) }}">{{ p }}</a>
+          </li>
+          {% endfor %}
+          <li class="page-item {{ 'disabled' if not page_obj.has_next }}">
+            <a class="page-link"
+               href="{{ url_for('order.my_tickets', q=q, status=selected_status, page=page_obj.next_num) }}">&raquo;</a>
+          </li>
+        </ul>
+      </nav>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

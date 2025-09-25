@@ -1,0 +1,91 @@
+name: EasyTicket Develop CICD
+
+on:
+  push:
+    branches:
+      - develop
+
+env:
+  IMAGE_NAME: nguyentuong/easyticket
+
+jobs:
+  build-test-deploy:
+    runs-on: ubuntu-22.04
+
+    steps:
+      # 1. Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: develop
+
+      # 2. Set up Python
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # 3. Install dependencies
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r easyticket/requirements.txt
+
+      # 4. Generate .env file from GitHub Secrets
+      - name: Generate .env file
+        run: |
+          echo "VNP_TMNCODE=${{ secrets.VNP_TMNCODE }}" >> easyticket/.env
+          echo "VNP_HASHSECRET=${{ secrets.VNP_HASHSECRET }}" >> easyticket/.env
+          echo "VNP_URL=${{ secrets.VNP_URL }}" >> easyticket/.env
+          echo "VNP_RETURNURL=${{ secrets.VNP_RETURNURL }}" >> easyticket/.env
+          echo "VNP_IPNURL=${{ secrets.VNP_IPNURL }}" >> easyticket/.env
+          echo "VNP_VERSION=${{ secrets.VNP_VERSION }}" >> easyticket/.env
+          echo "VNP_COMMAND=${{ secrets.VNP_COMMAND }}" >> easyticket/.env
+          echo "MOMO_PARTNER_CODE=${{ secrets.MOMO_PARTNER_CODE }}" >> easyticket/.env
+          echo "MOMO_ACCESS_KEY=${{ secrets.MOMO_ACCESS_KEY }}" >> easyticket/.env
+          echo "MOMO_SECRET_KEY=${{ secrets.MOMO_SECRET_KEY }}" >> easyticket/.env
+          echo "MOMO_REDIRECT_URL=${{ secrets.MOMO_REDIRECT_URL }}" >> easyticket/.env
+          echo "MOMO_IPN_URL=${{ secrets.MOMO_IPN_URL }}" >> easyticket/.env
+          echo "MOMO_ENDPOINT=${{ secrets.MOMO_ENDPOINT }}" >> easyticket/.env
+          echo "MOMO_REQUEST_TYPE=${{ secrets.MOMO_REQUEST_TYPE }}" >> easyticket/.env
+          echo "CLOUD_NAME=${{ secrets.CLOUD_NAME }}" >> easyticket/.env
+          echo "API_KEY=${{ secrets.API_KEY }}" >> easyticket/.env
+          echo "API_SECRET=${{ secrets.API_SECRET }}" >> easyticket/.env
+
+      # 5. Run Unit Tests
+      - name: Run Unit Tests
+        run: |
+          python -m pytest easyticket/app/tests/unittest --maxfail=3 --disable-warnings -q
+
+      # 6. Run Integration Tests
+      - name: Run Integration Tests
+        run: |
+          python -m pytest easyticket/app/tests/integration --maxfail=3 --disable-warnings -q
+
+      # 7. Run Acceptance Tests
+      - name: Run Acceptance Tests
+        run: |
+          python -m pytest easyticket/app/tests/acceptance_test --maxfail=3 --disable-warnings -q
+
+      # 8. Build Docker image (có .env trong context)
+      - name: Build Docker image
+        run: |
+          docker build -t $IMAGE_NAME:${{ github.run_number }} easyticket
+          docker tag $IMAGE_NAME:${{ github.run_number }} $IMAGE_NAME:latest
+
+      # 9. Login & Push Docker Hub
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      - name: Push Docker image
+        run: |
+          docker push $IMAGE_NAME:${{ github.run_number }}
+          docker push $IMAGE_NAME:latest
+
+      # 10. Trigger Render Deploy
+      - name: Trigger Render Deploy
+        run: |
+          curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}

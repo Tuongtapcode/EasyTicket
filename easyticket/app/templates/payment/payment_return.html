@@ -1,0 +1,49 @@
+{% extends "layout/base.html" %}
+{% block title %}Kết quả thanh toán{% endblock %}
+{% block content %}
+
+<section class="py-5">
+  <div class="container text-center">
+    <h2 class="{% if status == 'SUCCESS' %}text-success{% else %}text-danger{% endif %}">
+      {% if status == 'SUCCESS' %}
+        ✅ Đặt vé thành công!
+      {% else %}
+        ❌ Thanh toán thất bại
+      {% endif %}
+    </h2>
+    <p class="text-muted">Đơn hàng: {{ orderId }} | Giao dịch: {{ transId }}</p>
+    <p>Số tiền: <strong>{{ amount }} VND</strong></p>
+    <p>Thông điệp: {{ message or "Không có" }} (code: {{ resultCode }})</p>
+
+    <a href="/" class="btn btn-outline-primary mt-3">🏠 Về trang chủ</a>
+  </div>
+
+  {% if status == "SUCCESS" and tickets %}
+  <hr>
+  <div class="container mt-4">
+    <h4 class="mb-3">Danh sách vé đã phát hành</h4>
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+      {% for ticket in tickets %}
+      <div class="col">
+        <div class="card h-100 shadow-sm">
+          <div class="card-body">
+            <h5 class="card-title">🎫 {{ ticket.ticket_code }}</h5>
+            <p><strong>Sự kiện:</strong> {{ ticket.event.name }}</p>
+            <p><strong>Loại vé:</strong> {{ ticket.ticket_type.name }}</p>
+            <p><strong>Trạng thái:</strong> {{ ticket.status.name }}</p>
+            <p><strong>Ngày phát hành:</strong> {{ ticket.issued_at.strftime('%d/%m/%Y %H:%M') if ticket.issued_at else "Chưa rõ" }}</p>
+          </div>
+          {% if ticket.qr_data %}
+          <div class="card-footer text-center bg-white">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?data={{ ticket.qr_data|urlencode }}&size=150x150" class="img-fluid" alt="QR Code">
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</section>
+
+{% endblock %}
